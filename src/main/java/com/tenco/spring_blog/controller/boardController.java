@@ -38,7 +38,7 @@ public class boardController {
         return "board/save-form";
     }
 
-    // GET - http://localhost:8080/board/update (화면 요청)
+    // GET - http://localhost:8080/board/1/update (화면 요청)
     @GetMapping("/board/{id}/update")
     public String updateForm(@PathVariable Long id, Model model) {
         model.addAttribute("board", sampleBoard(id));
