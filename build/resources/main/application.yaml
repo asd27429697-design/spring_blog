@@ -1,3 +1,4 @@
 spring:
-  application:
-    name: spring_blog
+  profiles:
+    active: dev
+
