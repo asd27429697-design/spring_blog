@@ -30,10 +30,10 @@ spring:
       hibernate:
         format_sql: true      # 출력되는 SQL을 콘솔창에 줄바꿈해 보기 좋게 표시
       # 추후 data.sql 을 테이블 생성 후에 실행합니다
-    defer-datesource-initialization: true
+    defer-datasource-initialization: true
 
-
-#  sql:
-#    init:
-#      data-locations:
-#        - classpath:db/data.sql
+  # 서버 시작시 이 파일 실행
+  sql:
+    init:
+      data-locations:
+        - classpath:db/data.sql
