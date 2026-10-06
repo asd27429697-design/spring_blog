@@ -4,12 +4,16 @@
     <div class="card">
         <div class="card-header"><b>회원가입</b></div>
         <div class="card-body">
+            <!-- 원래 자원의 요청은 GET 요청이 일반적이다. 하지만 로그인 요청은 예외적으로
+                     사용자의 이름과 비밀번호를 작성해야 되기 때문에 보안상 이유로 반드시 POST
+                       요청을 해야 한다 -->
+
             <form action="/join" method="post">
                 <div class="mb-3">
-                    <input type="text" class="form-control" placeholder="사용자명" name="username">
+                    <input type="text" class="form-control" placeholder="사용자명" name="username" >
                 </div>
                 <div class="mb-3">
-                    <input type="password" class="form-control" placeholder="비밀번호" name="password">
+                    <input type="password" class="form-control" placeholder="비밀번호" name="password" >
                 </div>
                 <div class="mb-3">
                     <input type="email" class="form-control" placeholder="이메일" name="email">
@@ -18,6 +22,12 @@
             </form>
         </div>
     </div>
+    {{#errorMessage}}
+        <div class="alart alart-danger m-3">{{errorMessage}}</div>
+    {{/errorMessage}}
+    <p>
+
+    </p>
 </div>
 
 {{> layout/footer}}
