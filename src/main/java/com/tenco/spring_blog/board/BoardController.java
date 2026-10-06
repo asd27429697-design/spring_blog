@@ -57,15 +57,15 @@ public class BoardController {
     // Spring이 홈 데이터를 객체로 변환하는 과정 (데이터 바인딩 메커니즘)
     // 폼 데이터 바인딩 : Spring이 HTTP 요청 파라미터를 객체로 자동 변환
     public String save(BoardRequest.saveDto reqDto) {
-
+// TODO - 수정 예정
         // 1. DTO 에서 Entity 클래스 타입으로 변환 해주어야 한다.
-        Board board = Board.builder()
-                .title(reqDto.getTitle())
-                .content(reqDto.getContent())
-                .username(reqDto.getUsername())
-                .build();
-        // new Board(reqDto.getTitle(), reqDto.getContent(), reqDto.getUsername());
-        Board boardEntity = boardPersistRepository.save(board);
+//        Board board = Board.builder()
+//                .title(reqDto.getTitle())
+//                .content(reqDto.getContent())
+//                .user(reqDto.getUsername())
+//                .build();
+//        // new Board(reqDto.getTitle(), reqDto.getContent(), reqDto.getUsername());
+//        Board boardEntity = boardPersistRepository.save(board);
 
         return "redirect:/";
     }

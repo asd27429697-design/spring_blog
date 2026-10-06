@@ -1,5 +1,6 @@
 package com.tenco.spring_blog.board;
 
+import com.tenco.spring_blog.user.User;
 import com.tenco.spring_blog.util.MyDateUtil;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -26,7 +27,16 @@ public class Board {
     // 별도 어노테이션이 없으면 필드명이 컬렴명이 됨.
     private String title;
     private String content;
-    private String username;
+
+
+    // private String username;
+    // N : 1 , 1 : N , N : N
+    // Lazy 전략, EAGER 전략
+    // Lazy 전략, 게시글을 조회할 때 사용자는 바로 조회하지 않고, 실제로 사용할 때 그 때 한번 더 조회
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id") // board_bt 에 만들어질 외래키 컬럼 이름 설정
+    private User user;
+
     // now() <-- 사용하지 않아도 자동으로 PC --> DB 날짜 주입
     @CreationTimestamp
     private Timestamp createdAt; // created_at 컬럼(스프링이 기본값이 스네이크 케이스로 자동 변환 해 줌)
@@ -35,10 +45,10 @@ public class Board {
     // 비즈니스 로직을 위한 생성자 설계
     // id 와 createdAt은 JPA 자동으로 설정하므로 매게변수에 제외
     @Builder
-    public Board(String title, String content, String username) {
+    public Board(String title, String content, User user) {
         this.title = title;
         this.content = content;
-        this.username = username;
+        this.user = user;
     }
 
     // 자신의 상태 값을 변경하는 메서드 추가 (영속성 엔티티를 수정하는 메서드)
