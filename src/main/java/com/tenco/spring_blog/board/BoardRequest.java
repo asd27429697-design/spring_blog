@@ -14,14 +14,14 @@ public class BoardRequest {
 
         // 검증 메서드 (선택 사항)
         public void validate() {
-            if (title == null || title.trim().isEmpty()) {
+            if(title == null || title.trim().isEmpty()) {
                 throw new Exception400("제목은 필수입니다");
             }
-
-            if (content == null || content.trim().isEmpty()) {
+            if(content == null || content.trim().isEmpty()) {
                 throw new Exception400("내용은 필수입니다");
             }
         }
+
         // DTO 에서 Entity로 변환하는 편의 메서드 설계
         public Board toEntity(User user) {
             return Board.builder()
@@ -30,6 +30,7 @@ public class BoardRequest {
                     .user(user) // 세션에서 가져온 User 객체 설정
                     .build();
         }
+
     }
 
     @Data
@@ -39,14 +40,12 @@ public class BoardRequest {
 
         // 검증 메서드 (선택 사항)
         public void validate() {
-            if (title == null || title.trim().isEmpty()) {
+            if(title == null || title.trim().isEmpty()) {
                 throw new Exception400("제목은 필수입니다");
             }
-
-            if (content == null || content.trim().isEmpty()) {
+            if(content == null || content.trim().isEmpty()) {
                 throw new Exception400("내용은 필수입니다");
             }
         }
     }
-
 }
