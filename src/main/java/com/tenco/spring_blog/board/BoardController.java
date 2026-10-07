@@ -92,24 +92,71 @@ public class BoardController {
 
     // GET - http://localhost:8080/board/1/update (수정 화면 요청)
     @GetMapping("/board/{id}/update")
-    public String updateForm(@PathVariable Long id, Model model) {
+    public String updateForm(@PathVariable Long id, Model model, HttpSession session, RedirectAttributes rttr) {
+        // 1. 인증 검사
+        User sessionUser = (User) session.getAttribute("sessionUser");
+        if (sessionUser == null) {
+            return "redirect:/login";
+        }
 
-        // 수정하기 화면 요청 (먼저 조회 부터)
+        // 2. 권한 체크를 위한 게시글 조회
         Board board = boardPersistRepository.findById(id);
-        model.addAttribute("board", board);
-        return "board/update-form";
+
+        try {
+
+            // 3. 권한 체크 : 본인이 작성한 게시글만 수저 가능
+            if (!board.isOwner(sessionUser.getId())) {
+                throw new RuntimeException("수정 권한이 없습니다");
+            }
+            model.addAttribute("board", board);
+            return "board/update-form";
+        } catch (Exception e) {
+            // 권한이 없은 또는 다른 오류
+            log.error("삭제 실패 : {}", e.getMessage());
+            //throw new RuntimeException(e);
+            // 권한 없음 또는 기타 오류
+            rttr.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/board/" + id;
+
+        }
+
     }
 
     // POST - http://localhost:8080/board/1/update (게시글 수정 기능 요청)
     @PostMapping("/board/{id}/update")
     public String update(@PathVariable Long id,
-                         BoardRequest.UpdateDto reqDto) {
+                         BoardRequest.UpdateDto updateDto, HttpSession session, Model model) {
 
-        reqDto.validate(); // 유효성 실패 (throw 던져짐)
+        // 1. 인증 검사
+        User sessionUser = (User) session.getAttribute("sessionUser");
+        if (sessionUser == null) {
+            return "redirect:/login";
+        }
+        // 2. 권한 검사
+        Board boardEntity = boardPersistRepository.findById(id);
+        try {
 
-        boardPersistRepository.updateById(id, reqDto);
-        // PRG 패턴
-        return "redirect:/board/" + id; // 리다이렉트 수정 된 게시글 상세보기 화면 이동
+            if (!boardEntity.isOwner(sessionUser.getId())) {
+                throw new RuntimeException("수정 권한이 없습니다");
+            }
+
+            // 3. 입력 데이터 검증
+            updateDto.validate();
+
+            // 4. 더티 체킹을 통한 수정 실행
+            boardPersistRepository.updateById(id, updateDto);
+            // PRG
+            // 5. 수정 완료 후 해당 게시글 상세보기로 리다이렉트 처리
+            return "redirect:/board/" + id;
+
+        } catch (Exception e) {
+            model.addAttribute(boardEntity);
+            model.addAttribute("errorMessage", e.getMessage());
+            // 내부에서 뷰 리졸브를 활용한 템플릿 파일 찾기
+            return "board/update-form";
+        }
+
+
     }
 
     // 게시글 삭제
