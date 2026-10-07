@@ -3,7 +3,6 @@ package com.tenco.spring_blog.user;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -13,6 +12,26 @@ import org.springframework.stereotype.Repository;
 public class UserPersistRepository {
 
     private final EntityManager em;
+
+    @Transactional
+    public User updateById(Long id, UserRequest.UpdateDto updateDto) {
+        User userEntity = em.find(User.class, id);
+        if (userEntity == null) {
+            throw new IllegalArgumentException("사용자르 찾을 수 없습니다");
+        }
+        userEntity.update(updateDto.getPassword());
+        return userEntity;
+    }
+
+    // 회원 정보 조회: 수정 폼용
+    public User findById(Long id) {
+        User user = em.find(User.class, id);
+
+        if (user == null) {
+            throw new RuntimeException("사용자를 찾을 수 없습니다");
+        }
+        return user;
+    }
 
     // 회원 정보 조회 - 로그인 (사용자 이름, 비밀번호 확인)
     public User findByUsernameAndPassword(String username, String password) {

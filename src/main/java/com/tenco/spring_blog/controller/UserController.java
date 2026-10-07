@@ -4,6 +4,7 @@ import com.tenco.spring_blog.user.User;
 import com.tenco.spring_blog.user.UserPersistRepository;
 import com.tenco.spring_blog.user.UserRequest;
 import jakarta.servlet.http.HttpSession;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -94,6 +95,7 @@ public class UserController {
             // 머스태치가 세션 값을 기본으로 읽지 않는 설정이 되어 있음
             // 머스태치 파일에서 세션 메모리에 접근할 수 있도록 설정을 추가 해야 함. application.yml 공통
             // 4. 로그인 성공 : 세션에 사용자 정보를 저장
+            sessionUser.setPassword(null);
             session.setAttribute("sessionUser", sessionUser);
 
             log.info("로그인 한 사용자 : {} ", sessionUser.getUsername());
@@ -110,12 +112,51 @@ public class UserController {
 
     // GET - http://localhost:8080/user/update
     @GetMapping("/user/update")
-    public String updateForm(Model model) {
+    public String updateForm(Model model, HttpSession session) {
+        // 1. 인증 검사
+        User sessionUser = (User) session.getAttribute("sessionUser");
+        if (sessionUser == null) {
+            return "redirect:/login";
+        }
 
-        // 뼈대용 임시 데이터
-        model.addAttribute("user", Map.of("username", "김민수", "email", "abc@naver.com"));
-
+        User user = userPersistRepository.findById(sessionUser.getId());
+        model.addAttribute("user", user);
         return "user/update-form";
+    }
+
+    // GET - http://localhost:8080/user/update
+
+    @PostMapping("/user/update")
+    public String update(Model model, HttpSession session, UserRequest.UpdateDto updateDto) {
+        // 1. 인증 검사
+        User sessionUser = (User) session.getAttribute("sessionUser");
+        if (sessionUser == null) {
+            return "redirect:/login";
+        }
+        try {
+            // 2. 권한 검사
+            // 다른 사람의 정보는 처음부터 수정할 수 없음(대상이 실제로 있는지만 확인)
+            User userEntity = userPersistRepository.findById(sessionUser.getId());
+            if (userEntity == null) {
+                throw new IllegalArgumentException("사용자를 찾을 수 없습니다");
+            }
+            // 3. 유효성 검사
+            updateDto.validate();
+
+            // 4. 세션 동기화 : 수정 된 정보를 세션에 반영
+            User updateUser = userPersistRepository.updateById(sessionUser.getId(), updateDto);
+            // 세션 동기화 처리
+            updateUser.setPassword(null);
+            session.setAttribute("sessionUser", updateUser);
+            // 5. 수정 성공 후 메인페이지로 리다이렉트
+            return "redirect:/";
+        } catch (Exception e) {
+            // 5.1 예외 발생 (내부 이동)
+            log.error("회원 정보 실패 : {} ", e.getMessage());
+            model.addAttribute("user", userPersistRepository.findById(sessionUser.getId()));
+            model.addAttribute("errorMessage", e.getMessage());
+            return "user/update-form";
+        }
     }
 
     // GET - http://localhost:8080/logout
