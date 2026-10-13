@@ -1,0 +1,2991 @@
+﻿
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\db\data.sql
+========================================
+
+-- 1. 사용자 (외래키가 가리킬 대상이므로 먼저 넣습니다)
+-- 비밀번호는 지금은 연습용 평문입니다. 암호화는 나중에 적용합니다
+INSERT INTO user_tb (username, password, email, created_at) VALUES ('admin',   '1234', 'admin@tenco.com',   NOW());
+INSERT INTO user_tb (username, password, email, created_at) VALUES ('minsu',   '1234', 'minsu@tenco.com',   NOW());
+INSERT INTO user_tb (username, password, email, created_at) VALUES ('jihun',   '1234', 'jihun@tenco.com',   NOW());
+INSERT INTO user_tb (username, password, email, created_at) VALUES ('seoyeon', '1234', 'seoyeon@tenco.com', NOW());
+
+-- 2. 게시글 (user_id 는 위 사용자의 id)
+-- admin(1)
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('블로그 개설을 환영합니다', '새 블로그가 문을 열었습니다. 많은 참여 부탁드립니다.', 1, NOW());
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('이용 수칙 안내', '서로 존중하는 소통 문화를 함께 만들어 가요.', 1, NOW());
+-- minsu(2)
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('스프링 부트 학습 후기', 'JPA를 배우니 SQL을 직접 쓰는 일이 확 줄었습니다.', 2, NOW());
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('연관관계 정리 노트', '@ManyToOne 과 외래키의 관계를 정리해 봤습니다.', 2, NOW());
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('코딩 테스트 문제 추천', '알고리즘 공부에 좋은 문제들을 모아 봤습니다.', 2, NOW());
+-- jihun(3)
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('프론트엔드 프레임워크 비교', '리액트와 뷰의 장단점을 비교해 봤습니다.', 3, NOW());
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('신입 개발자 취업 팁', '포트폴리오에서 가장 중요했던 점을 공유합니다.', 3, NOW());
+-- seoyeon(4)
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('첫 번째 게시글입니다', '블로그에 처음 글을 올려 봅니다. 자주 소통해요.', 4, NOW());
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\templates\board\detail.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+
+    {{! 수정, 삭제 버튼: 오른쪽 정렬 }}
+    <div class="d-flex justify-content-end">
+        <a href="/board/{{board.id}}/update" class="btn btn-warning me-1">수정</a>
+        <form action="/board/{{board.id}}/delete" method="post">
+            <button class="btn btn-danger">삭제</button>
+        </form>
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <b>작성자</b> : {{board.user.username}}
+    </div>
+
+    <div>
+        <h2><b>{{board.title}}</b></h2>
+        <hr>
+        <div class="m-4 p-2">
+            {{board.content}}
+        </div>
+    </div>
+
+    {{! 댓글: 아직 기능이 없어 화면만 만들어 둡니다 }}
+    <div class="card mt-3">
+        <div class="card-body">
+            <form action="/reply/save" method="post">
+                <textarea class="form-control" rows="2" name="comment" placeholder="댓글을 입력하세요"></textarea>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-outline-primary mt-1">댓글 등록</button>
+                </div>
+            </form>
+        </div>
+        <div class="card-footer"><b>댓글 목록</b></div>
+        <div class="list-group">
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex">
+                    <div class="px-1 me-1 bg-primary text-white rounded">박지훈</div>
+                    <div>댓글 내용입니다</div>
+                </div>
+                <form action="/reply/1/delete" method="post">
+                    <button class="btn"><i class="fa-solid fa-trash"></i></button>
+                </form>
+            </div>
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex">
+                    <div class="px-1 me-1 bg-primary text-white rounded">이서연</div>
+                    <div>댓글 내용입니다</div>
+                </div>
+                <form action="/reply/2/delete" method="post">
+                    <button class="btn"><i class="fa-solid fa-trash"></i></button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\templates\board\list.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    {{#boardList}}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4 class="card-title">{{title}}</h4>
+                <p> 작성자 : {{user.username}} | 작성일 : {{time}}</p>
+                <a href="/board/{{id}}" class="btn btn-primary">상세보기</a>
+            </div>
+        </div>
+    {{/boardList}}
+
+    <!--  페이지네이션 (추후 구현 예정)  -->
+    <ul class="pagination d-flex justify-content-center">
+        <li class="page-item desabled"><a class="page-link" href="#">Previous</a></li>
+        <li class="page-item"><a class="page-link" href="#">1</a></li>
+        <li class="page-item"><a class="page-link" href="#">2</a></li>
+        <li class="page-item"><a class="page-link" href="#">Next</a></li>
+    </ul>
+
+</div>
+
+
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\templates\board\save-form.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    <div class="card">
+        <div class="card-header"><b>글쓰기</b></div>
+        <div class="card-body">
+            {{! name 속성의 값이 서버에서 받을 때의 이름이 됩니다 }}
+            <form action="/board/save" method="post">
+
+                <div class="mb-3">
+                    <input type="text" class="form-control" placeholder="제목" name="title">
+                </div>
+                <div class="mb-3">
+                    <textarea class="form-control" rows="5" placeholder="내용" name="content"></textarea>
+                </div>
+                <button class="btn btn-primary form-control">글쓰기 완료</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\templates\board\update-form.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    <div class="card">
+        <div class="card-header"><b>글 수정</b></div>
+        <div class="card-body">
+            <form action="/board/{{board.id}}/update" method="post">
+
+                <div class="mb-3">
+                    <input type="text" class="form-control" name="title" value="{{board.title}}">
+                </div>
+                <div class="mb-3">
+                    <textarea class="form-control" rows="5" name="content">{{board.content}}</textarea>
+                </div>
+                <button class="btn btn-primary form-control">수정 완료</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\templates\err\400.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+
+    <h1>Bad Request 400</h1>
+    <hr>
+    <h3>{{msg}}</h3>
+    <div class="mt-3">
+        <a href="javascript:history.back()" class="btn btn-secondary">이전페이지</a>
+        <a href="/" class="btn btn-primary">메인페이지</a>
+    </div>
+</div>
+
+{{> layout/header}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\templates\err\401.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+
+    <h1>Unauthorized 401</h1>
+    <hr>
+    <h3>{{msg}}</h3>
+    <div class="mt-3">
+        <a href="/login" class="btn btn-secondary">로그인</a>
+        <a href="/" class="btn btn-primary">메인페이지</a>
+    </div>
+</div>
+
+{{> layout/header}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\templates\err\403.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+
+    <h1>Forbidden 403</h1>
+    <hr>
+    <h3>{{msg}}</h3>
+    <div class="mt-3">
+        <a href="javascript:history.back()" class="btn btn-secondary">이전페이지</a>
+        <a href="/" class="btn btn-primary">메인페이지</a>
+    </div>
+</div>
+
+{{> layout/header}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\templates\err\404.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+
+    <h1>Not Found 404</h1>
+    <hr>
+    <h3>{{msg}}</h3>
+    <div class="mt-3">
+        <a href="/" class="btn btn-primary">메인페이지</a>
+    </div>
+</div>
+
+{{> layout/header}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\templates\err\500.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+
+    <h1>Internal Server Error 500</h1>
+    <hr>
+    <h3>{{msg}}</h3>
+    <div class="mt-3">
+        <a href="/" class="btn btn-primary">메인페이지</a>
+    </div>
+</div>
+
+{{> layout/header}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\templates\layout\footer.mustache
+========================================
+
+{{#errorMessage}}
+    <div class="container p-3">
+        <div class="alert alert-danger m-3">{{errorMessage}}</div>
+    </div>
+{{/errorMessage}}
+
+<footer class="bg-light p-5 text-center mt-auto">
+    <h4>Created by Tencoding</h4>
+    <h5>Tel. 010-1234-1234</h5>
+    <button class="btn btn-outline-primary">고객센터</button>
+    <button class="btn btn-outline-primary">오시는 길</button>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\templates\layout\header.mustache
+========================================
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Blog</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Tencoding</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+            <ul class="navbar-nav">
+                {{#sessionUser}}
+                    <!-- 로그인 했을 때 보여져야 하는 메뉴 -->
+                    <li class="nav-item"><a class="nav-link" href="/board/save">글쓰기</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/user/update">회원정보</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/logout">로그아웃</a></li>
+                {{/sessionUser}}
+
+                {{^sessionUser}}
+                    <!-- 로그인 안 했을 때 보여져야 하는 메뉴 -->
+                    <li class="nav-item"><a class="nav-link" href="/join">회원가입</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/login">로그인</a></li>
+                {{/sessionUser}}
+
+
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\templates\user\join-form.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    <div class="card">
+        <div class="card-header"><b>회원가입</b></div>
+        <div class="card-body">
+            <!-- 원래 자원의 요청은 GET 요청이 일반적이다. 하지만 로그인 요청은 예외적으로
+                     사용자의 이름과 비밀번호를 작성해야 되기 때문에 보안상 이유로 반드시 POST
+                       요청을 해야 한다 -->
+
+            <form action="/join" method="post">
+                <div class="mb-3">
+                    <input type="text" class="form-control" placeholder="사용자명" name="username" >
+                </div>
+                <div class="mb-3">
+                    <input type="password" class="form-control" placeholder="비밀번호" name="password" >
+                </div>
+                <div class="mb-3">
+                    <input type="email" class="form-control" placeholder="이메일" name="email">
+                </div>
+                <button class="btn btn-primary form-control">회원가입</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\templates\user\login-form.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    <div class="card">
+        <div class="card-header"><b>로그인</b></div>
+        <div class="card-body">
+            <form action="/login" method="post">
+                <div class="mb-3">
+                    <input type="text" class="form-control" placeholder="사용자명" name="username" value="minsu">
+                </div>
+                <div class="mb-3">
+                    <input type="password" class="form-control" placeholder="비밀번호" name="password" value="1234">
+                </div>
+                <button class="btn btn-primary form-control">로그인</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\templates\user\update-form.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    <div class="card">
+        <div class="card-header"><b>회원정보 수정</b></div>
+        <div class="card-body">
+            <form action="/user/update" method="post">
+                <div class="mb-3">
+                    <input type="text" class="form-control" value="{{user.username}}" readonly>
+                </div>
+                <div class="mb-3">
+                    <input type="password" class="form-control" placeholder="새 비밀번호" name="password">
+                </div>
+                <div class="mb-3">
+                    <input type="email" class="form-control" name="email" value="{{user.email}}" readonly>
+                </div>
+                <button class="btn btn-primary form-control">수정 완료</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\application-dev.yaml
+========================================
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO                         # 스프링과 라이브러리는 INFO 이상만 출력
+    com.tenco.spring_blog: DEBUG       # 우리 코드는 DEBUG 이상까지
+
+spring:
+  # 데이터 베이스 연결 (H2 메모리 DB 사용)
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:blogdb
+    username: root
+    password: root
+
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      # 시작할 때 마다 테이블을 새로 만듭니다. 기존 데이터는 다 지워집니다 (개발용)
+      ddl-auto: create
+    # 실행되는 SQL을 콘솔에 출력합니다
+    show-sql: true
+    properties:
+      hibernate:
+        default_batch_fetch_size: 10
+        format_sql: true      # 출력되는 SQL을 콘솔창에 줄바꿈해 보기 좋게 표시
+      # 추후 data.sql 을 테이블 생성 후에 실행합니다
+    defer-datasource-initialization: true
+
+  # 서버 시작시 이 파일 실행
+  sql:
+    init:
+      data-locations:
+        - classpath:db/data.sql
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\application-local.yaml
+========================================
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO                       #스프링과 라이브러리는 INFO 이상만 출력
+    com.tenco.spring_blog: DEBUG     #우리 코드는 DEBUG 이상까지
+
+
+spring:
+  # 데이터 베이스 연결 (H2 메모리 DB 사용)
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  # H2  콘솔 화면 켜기 (http://localhost:8080/h2-console)
+  h2:
+    console:
+      enabled: true
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      # 시작할 때마다 테이블을 새로 만듭니다. 기존 데이터는 다 지워집니다(개발용)
+      ddl-auto: create
+    # 실행되는 SQL을 콘솔에 출력합니다
+    show-sql: true
+    properties:
+      hibernate:
+        default_batch_fetch_size: 10   # 팀 프로젝트 할 때 무조건 넣기
+        format_sql: true     # 출력되는 SQL을 콘솔창에 줄바꿈해 보기 좋게 표시
+    # 추후 data.sql 을 테이블 생성후에 실행합니다
+    defer-datasource-initialization: true
+
+  # 서버 시작시 이 파일 실행
+  sql:
+    init:
+      mode: always    # MYSQL 사용시 필수 (always, never)
+      data-locations:
+        - classpath:db/data.sql
+
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\application-prod.yaml
+========================================
+
+server:
+  port: 5000
+
+logging:
+  level:
+    root: INFO
+    com.tenco.spring_blog: INFO
+
+
+spring:
+  # 데이터 베이스 연결 (MySQL)
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      # 운영에서는 create 를 쓰지 않습니다. 없는 테이블과 컬럼만 추가합니다.
+      default_batch_fetch_size: 10
+      ddl-auto: update
+    # 실행되는 SQL을 콘솔에 출력합니다
+    show-sql: true
+    # 추후 data.sql 을 테이블 생성 후에 실행합니다
+    defer-datesource-initialization: true
+
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\build\resources\main\application.yaml
+========================================
+
+spring:
+  config:
+    import: optional:file:.env[.properties] #스프링 .env를 자동으로 읽지 않습니다. 읽을 수 있도록 설정 추가
+  mustache:
+    servlet:
+      expose-session-attributes: true  # 머스태치 파일에서 세션에 담을 값을 바로 사용 가능
+  profiles:
+    active: local
+
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\out\production\resources\db\data.sql
+========================================
+
+insert into board_tb(title, content, username, created_at) values('첫 번째 글', '블로그에 오신 것을 환영합니다.', '홍길동', now());
+insert into board_tb(title, content, username, created_at) values('두 번째 글', '스프링 부트로 블로그를 만듭니다.', '김민수', now());
+insert into board_tb(title, content, username, created_at) values('세 번째 글', 'H2 콘솔에서 데이터를 확인해 보세요.', '김희성', now());
+insert into board_tb(title, content, username, created_at) values('네 번째 글', '머스태치로 화면을 그립니다.', '박지훈', now());
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\out\production\resources\templates\board\detail.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+
+    {{! 수정, 삭제 버튼: 오른쪽 정렬 }}
+    <div class="d-flex justify-content-end">
+        <a href="/board/{{board.id}}/update" class="btn btn-warning me-1">수정</a>
+        <form action="/board/{{board.id}}/delete" method="post">
+            <button class="btn btn-danger">삭제</button>
+        </form>
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <b>작성자</b> : {{board.user.username}}
+    </div>
+
+    <div>
+        <h2><b>{{board.title}}</b></h2>
+        <hr>
+        <div class="m-4 p-2">
+            {{board.content}}
+        </div>
+    </div>
+
+    {{! 댓글: 아직 기능이 없어 화면만 만들어 둡니다 }}
+    <div class="card mt-3">
+        <div class="card-body">
+            <form action="/reply/save" method="post">
+                <textarea class="form-control" rows="2" name="comment" placeholder="댓글을 입력하세요"></textarea>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-outline-primary mt-1">댓글 등록</button>
+                </div>
+            </form>
+        </div>
+        <div class="card-footer"><b>댓글 목록</b></div>
+        <div class="list-group">
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex">
+                    <div class="px-1 me-1 bg-primary text-white rounded">박지훈</div>
+                    <div>댓글 내용입니다</div>
+                </div>
+                <form action="/reply/1/delete" method="post">
+                    <button class="btn"><i class="fa-solid fa-trash"></i></button>
+                </form>
+            </div>
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex">
+                    <div class="px-1 me-1 bg-primary text-white rounded">이서연</div>
+                    <div>댓글 내용입니다</div>
+                </div>
+                <form action="/reply/2/delete" method="post">
+                    <button class="btn"><i class="fa-solid fa-trash"></i></button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\out\production\resources\templates\board\list.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    {{#boardList}}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4 class="card-title">{{title}}</h4>
+                <a href="/board/{{id}}" class="btn btn-primary">상세보기</a>
+            </div>
+        </div>
+    {{/boardList}}
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\out\production\resources\templates\board\save-form.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    <div class="card">
+        <div class="card-header"><b>글쓰기</b></div>
+        <div class="card-body">
+            {{! name 속성의 값이 서버에서 받을 때의 이름이 됩니다 }}
+            <form action="/board/save" method="post">
+                <div class="mb-3">
+                    <input type="text" class="form-control" placeholder="작성자" name="username">
+                </div>
+                <div class="mb-3">
+                    <input type="text" class="form-control" placeholder="제목" name="title">
+                </div>
+                <div class="mb-3">
+                    <textarea class="form-control" rows="5" placeholder="내용" name="content"></textarea>
+                </div>
+                <button class="btn btn-primary form-control">글쓰기 완료</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\out\production\resources\templates\board\update-form.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    <div class="card">
+        <div class="card-header"><b>글 수정</b></div>
+        <div class="card-body">
+            <form action="/board/{{board.id}}/update" method="post">
+                <div class="mb-3">
+                    <input type="text" class="form-control" value="{{board.username}}" readonly>
+                </div>
+                <div class="mb-3">
+                    <input type="text" class="form-control" name="title" value="{{board.title}}">
+                </div>
+                <div class="mb-3">
+                    <textarea class="form-control" rows="5" name="content">{{board.content}}</textarea>
+                </div>
+                <button class="btn btn-primary form-control">수정 완료</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\out\production\resources\templates\layout\footer.mustache
+========================================
+
+<footer class="bg-light p-5 text-center mt-auto">
+    <h4>Created by Tencoding</h4>
+    <h5>Tel. 010-1234-1234</h5>
+    <button class="btn btn-outline-primary">고객센터</button>
+    <button class="btn btn-outline-primary">오시는 길</button>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\out\production\resources\templates\layout\header.mustache
+========================================
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Blog</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Tencoding</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="/join">회원가입</a></li>
+                <li class="nav-item"><a class="nav-link" href="/login">로그인</a></li>
+                <li class="nav-item"><a class="nav-link" href="/board/save">글쓰기</a></li>
+                <li class="nav-item"><a class="nav-link" href="/user/update">회원정보</a></li>
+                <li class="nav-item"><a class="nav-link" href="/logout">로그아웃</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\out\production\resources\templates\user\join-form.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    <div class="card">
+        <div class="card-header"><b>회원가입</b></div>
+        <div class="card-body">
+            <form action="/join" method="post">
+                <div class="mb-3">
+                    <input type="text" class="form-control" placeholder="사용자명" name="username">
+                </div>
+                <div class="mb-3">
+                    <input type="password" class="form-control" placeholder="비밀번호" name="password">
+                </div>
+                <div class="mb-3">
+                    <input type="email" class="form-control" placeholder="이메일" name="email">
+                </div>
+                <button class="btn btn-primary form-control">회원가입</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\out\production\resources\templates\user\login-form.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    <div class="card">
+        <div class="card-header"><b>로그인</b></div>
+        <div class="card-body">
+            <form action="/login" method="post">
+                <div class="mb-3">
+                    <input type="text" class="form-control" placeholder="사용자명" name="username">
+                </div>
+                <div class="mb-3">
+                    <input type="password" class="form-control" placeholder="비밀번호" name="password">
+                </div>
+                <button class="btn btn-primary form-control">로그인</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\out\production\resources\templates\user\update-form.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    <div class="card">
+        <div class="card-header"><b>회원정보 수정</b></div>
+        <div class="card-body">
+            <form action="/user/update" method="post">
+                <div class="mb-3">
+                    <input type="text" class="form-control" value="{{user.username}}" readonly>
+                </div>
+                <div class="mb-3">
+                    <input type="password" class="form-control" placeholder="새 비밀번호" name="password">
+                </div>
+                <div class="mb-3">
+                    <input type="email" class="form-control" name="email" value="{{user.email}}">
+                </div>
+                <button class="btn btn-primary form-control">수정 완료</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\out\production\resources\application-dev.yaml
+========================================
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO                         # 스프링과 라이브러리는 INFO 이상만 출력
+    com.tenco.spring_blog: DEBUG       # 우리 코드는 DEBUG 이상까지
+
+spring:
+  # 데이터 베이스 연결 (H2 메모리 DB 사용)
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:blogdb
+    username: sa
+    password:
+
+  # H2 콘솔 화면 켜기 (http://localhost:8080/h2-console)
+  h2:
+    console:
+      enabled: true
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      # 시작할 때 마다 테이블을 새로 만듭니다. 기존 데이터는 다 지워집니다 (개발용)
+      ddl-auto: create
+    # 실행되는 SQL을 콘솔에 출력합니다
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true      # 출력되는 SQL을 콘솔창에 줄바꿈해 보기 좋게 표시
+      # 추후 data.sql 을 테이블 생성 후에 실행합니다
+    defer-datasource-initialization: true
+
+  # 서버 시작시 이 파일 실행
+  sql:
+    init:
+      data-locations:
+        - classpath:db/data.sql
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\out\production\resources\application-local.yaml
+========================================
+
+
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\out\production\resources\application-prod.yaml
+========================================
+
+server:
+  port: 5000
+
+logging:
+  level:
+    root: INFO
+    com.tenco.spring_blog: INFO
+
+
+spring:
+  # 데이터 베이스 연결 (MySQL)
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/myblog?serverTimezone=Asia/Seoul
+    username: root
+    password: root
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      # 운영에서는 create 를 쓰지 않습니다. 없는 테이블과 컬럼만 추가합니다.
+      ddl-auto: update
+    # 실행되는 SQL을 콘솔에 출력합니다
+    show-sql: true
+    # 추후 data.sql 을 테이블 생성 후에 실행합니다
+    defer-datesource-initialization: true
+
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\out\production\resources\application.yaml
+========================================
+
+spring:
+  profiles:
+    active: dev
+
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\board\Board.java
+========================================
+
+package com.tenco.spring_blog.board;
+
+import com.tenco.spring_blog.user.User;
+import com.tenco.spring_blog._core.util.MyDateUtil;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.sql.Timestamp;
+
+@Data
+// 엔티티 클래스 만들기 : 데이터베이스 테이블 한 개를 자바 클래스로 그린 설계도
+@Table(name = "board_tb")
+@Entity
+@NoArgsConstructor
+@AllArgsConstructor
+public class Board {
+
+    @Id // 이 필드가 기본 키 임을 나타 냄.
+    // 기본 키 값을 자동으로 생성 IDENTITY 전략 -> DB 기본 설정을 따른다 AUTO_INCREMENT 기능 사용
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // 별도 어노테이션이 없으면 필드명이 컬렴명이 됨.
+    private String title;
+    private String content;
+
+
+    // private String username;
+    // N : 1 , 1 : N , N : N
+    // Lazy 전략, EAGER 전략
+    // Lazy 전략, 게시글을 조회할 때 사용자는 바로 조회하지 않고, 실제로 사용할 때 그 때 한번 더 조회
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id") // board_bt 에 만들어질 외래키 컬럼 이름 설정
+    private User user;
+
+    // now() <-- 사용하지 않아도 자동으로 PC --> DB 날짜 주입
+    @CreationTimestamp
+    private Timestamp createdAt; // created_at 컬럼(스프링이 기본값이 스네이크 케이스로 자동 변환 해 줌)
+
+
+    // 비즈니스 로직을 위한 생성자 설계
+    // id 와 createdAt은 JPA 자동으로 설정하므로 매게변수에 제외
+    @Builder
+    public Board(String title, String content, User user) {
+        this.title = title;
+        this.content = content;
+        this.user = user;
+    }
+
+    // 자신의 상태 값을 변경하는 메서드 추가 (영속성 엔티티를 수정하는 메서드)
+    public void update(BoardRequest.UpdateDto updateDto) {
+        // 비즈니스 규칙 검증
+        updateDto.validate();
+        // 영속 상태에 있는 엔티티의 필드 값을 여기서 변경
+        this.title = updateDto.getTitle();
+        this.content = updateDto.getContent();
+        // 변경 감지 (Dirty Checking) 동작 과정
+        // 1. 영속성 컨텍스트가 엔티티 최초 상태를 스냅샷으로 따로 보관
+        // 2. 필드 값 변경시 현재 시점 상태와 스냅샷 비교
+        // 3. 트랜젝션 커밋 시점에 변경 된 필드만 UPDATE 쿼리를 자동 생성
+        // 4. UPDATE board_tb SET title = ? , content = ? WHERE id = ?
+    }
+
+    // 게시글 수정/삭제 권한 체크용 편의 메서드
+    public boolean isOwner(Long userId) {
+        return this.user.getId().equals(userId);
+    }
+
+
+    // 시간을 포맷을 하는 메서드 추가
+
+    public String getTime() {
+        return MyDateUtil.timestampFormat(createdAt);
+
+    }
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\board\BoardController.java
+========================================
+
+package com.tenco.spring_blog.board;
+
+import com.tenco.spring_blog._core.error.Exception403;
+import com.tenco.spring_blog._core.error.Exception404;
+import com.tenco.spring_blog._core.util.Define;
+import com.tenco.spring_blog.user.User;
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+
+@Slf4j
+@RequiredArgsConstructor // DI 처리
+@Controller
+public class BoardController {
+
+    private final BoardService boardService;
+
+    @GetMapping({"/", "/board/list"})
+    public String list(Model model) {
+        List<Board> boardList = boardService.findAll();
+        model.addAttribute("boardList", boardList);
+        return "board/list";
+    }
+
+    // GET http://localhost:8080/board/3
+    // excludePathPatterns로 제외되어 로그인 접근 가능
+    @GetMapping("/board/{id}")
+    public String detail(@PathVariable(name = "id") Long id, Model model) {
+        Board board = boardService.findById(id);
+        model.addAttribute("board", board);
+        return "board/detail";
+    }
+
+
+    // GET http://localhost:8080/board/save (화면 요청)
+    @GetMapping("/board/save")
+    public String saveForm(HttpSession session) {
+        return "board/save-form";
+    }
+
+
+    @PostMapping("/board/save")
+    public String save(BoardRequest.SaveDto saveDto, HttpSession session) {
+        saveDto.validate();
+        User sessionUser = (User) session.getAttribute(Define.SESSION_USER);
+        boardService.save(saveDto, sessionUser);
+        return "redirect:/";
+    }
+
+    // TODO 1. 추후 인가처리를 서비스단으로 이동 예정
+    // GET http://localhost:8080/board/1/update (화면 요청)
+    @GetMapping("/board/{id}/update")
+    public String updateForm(@PathVariable Long id, Model model, HttpSession session) {
+        Board board = boardService.findById(id);
+        User sessionUser  = (User) session.getAttribute(Define.SESSION_USER);
+        if (!board.isOwner(sessionUser.getId())) {
+            throw new Exception403("수정할 권한이 없습니다");
+        }
+        model.addAttribute("board", board);
+        return "board/update-form";
+    }
+
+
+    // POST http://localhost:8080/board/1/update (게시글 수정 기능 요청)
+    @PostMapping("/board/{id}/update")
+    public String update(@PathVariable Long id,
+                         BoardRequest.UpdateDto updateDto, HttpSession session) {
+
+        updateDto.validate();
+        User sessionUser = (User) session.getAttribute(Define.SESSION_USER);
+        boardService.updateById(id, updateDto, sessionUser);
+        return "redirect:/board/" + id;
+    }
+
+    // 게시글 삭제
+    @PostMapping("/board/{id}/delete")
+    public String delete(@PathVariable Long id, HttpSession session) throws Exception403 {
+        User sessionUser = (User) session.getAttribute(Define.SESSION_USER);
+        boardService.deleteById(id, sessionUser);
+        return "redirect:/";
+    }
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\board\BoardJpaRepository.java
+========================================
+
+package com.tenco.spring_blog.board;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface BoardJpaRepository extends JpaRepository<Board, Long> {
+    // 기본적인 CRUD 기능 다 만들어 져 있음.
+    /**
+     *  1. 등록 및 수정 : save(Board entity);
+     *      - 엔티티를 DB에 저장합니다. ID가 없으면 INSERT, 있으면 UPDATE를 실행 함.
+     *
+     *  2. 단건 조회 :  findById(Long id)
+     *      - ID로 엔티티를 조회하면 Optional<Board> 타입을 반환합니다.
+     *
+     *  3. 전체 조회 : findAll();
+     *      - 테이블의 모든 데이터를 조회하며 List<Board>로 반환 됨
+     *
+     *  4. 삭제 : deleteById(Long id);
+     *     - 특정 ID를 가진 엔티티를 삭제합니다.
+     *
+     *  5. 데이터 개수: count();
+     *     - 전체 레코드의 개수를 반환합니다.
+     *
+     *  6. 존재 여부 확인 : existsById(Long id);
+     *     - 해당 ID를 가진 데이터가 있는지 확인하여 boolean 을 반환합니다.
+     *
+     */
+
+    // 게시글 ID로 조회하면서 작성자 정보도 한번게 가져 오기
+    //  JOIN FETCH를 사용하여 N + 1 문제 해결
+    @Query(value = "SELECT b FROM Board b JOIN FETCH b.user u WHERE b.id = :id")
+    Optional<Board> findByIdJoinUser(@Param("id") Long id);
+    // N + 1 문제 : 지연 로딩(Lazy Loading) 에서 Board 조회 후 User 를 따로 조회하면 쿼리가 여러번 실행 됨.
+    // JOIN FETCH는 이를 한번의 쿼리를 해결 함.
+
+    @Query("SELECT b FROM Board b JOIN FETCH b.user u ORDER BY b.id DESC")
+    List<Board> findAllJoinUser();
+
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\board\BoardRequest.java
+========================================
+
+package com.tenco.spring_blog.board;
+
+import com.tenco.spring_blog._core.error.Exception400;
+import com.tenco.spring_blog.user.User;
+import lombok.Data;
+
+public class BoardRequest {
+
+    @Data
+    public static class SaveDto {
+        private String title;
+        private String content;
+        private String username;
+
+        // 검증 메서드 (선택 사항)
+        public void validate() {
+            if(title == null || title.trim().isEmpty()) {
+                throw new Exception400("제목은 필수입니다");
+            }
+            if(content == null || content.trim().isEmpty()) {
+                throw new Exception400("내용은 필수입니다");
+            }
+        }
+
+        // DTO 에서 Entity로 변환하는 편의 메서드 설계
+        public Board toEntity(User user) {
+            return Board.builder()
+                    .title(this.title)
+                    .content(this.content)
+                    .user(user) // 세션에서 가져온 User 객체 설정
+                    .build();
+        }
+
+    }
+
+    @Data
+    public static class UpdateDto {
+        private String title;
+        private String content;
+
+        // 검증 메서드 (선택 사항)
+        public void validate() {
+            if(title == null || title.trim().isEmpty()) {
+                throw new Exception400("제목은 필수입니다");
+            }
+            if(content == null || content.trim().isEmpty()) {
+                throw new Exception400("내용은 필수입니다");
+            }
+        }
+    }
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\board\BoardService.java
+========================================
+
+package com.tenco.spring_blog.board;
+
+import com.tenco.spring_blog._core.error.Exception403;
+import com.tenco.spring_blog._core.error.Exception404;
+import com.tenco.spring_blog.user.User;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Board 관련 비즈니스 로직을 처리하는 Service 계층
+ *
+ */
+@Slf4j
+@RequiredArgsConstructor // DI
+@Service // IoC (싱글톤 패턴으로 관리 됨)
+@Transactional(readOnly = true)
+// 모든 메서드를 읽기 전용 트렌젝션으로 실행 (findAll, findById 등 조회에 적합)
+// 성능 최적화(변경 감지 비활성 화), 데이터 수정 방지,
+// 데이터베이스 락(lock)를 최소화해 동시성 성능 개선
+public class BoardService {
+
+    private final BoardJpaRepository boardJpaRepository;
+
+    /**
+     * 게시글 저장
+     *
+     * @param saveDto     게시글 저장 정보
+     * @param sessionUser 작성자 정보
+     * @return 저장된 게시글
+     */
+    // 데이터 수정이 필요하므로 트렌잭션 읽기 전용 설정을 해제하고 쓰기 가능한 트랜잭션으로 실행 됨.
+    @Transactional
+    public Board save(BoardRequest.SaveDto saveDto, User sessionUser) {
+        log.info("게시글 저장 시작 - 제목 : {}, 작성자 : {}", saveDto.getTitle(), sessionUser.getUsername());
+        Board board = saveDto.toEntity(sessionUser);
+        Board savedBoard = boardJpaRepository.save(board);
+        log.info("게시글 저장 완료 - ID : {}, 제목 : {}", savedBoard.getId(), savedBoard.getTitle());
+        return savedBoard;
+    }
+
+    /**
+     * 게시글 상세 조회
+     *
+     * @param id 게시글 pk
+     * @return 게시글 정보 (작성자 정보 포함)
+     */
+    public Board findById(Long id) {
+        log.info("게시글 상세 조회 서비스 - ID : {} ", id);
+        // boardJpaRepository.findById(id) <-- 이 메서드 대신 JOIN FETCH 를 사용 함
+        Board board = boardJpaRepository.findByIdJoinUser(id) // 직접 정의한 쿼리
+                .orElseThrow(() -> {
+                    log.warn("게시글 조회 실패 - ID : {}", id);
+                    return new Exception404("게시글을 찾을 수 없습니다");
+                });
+        log.info("게시글 상세 조회 완료 - 제목 : {}, 작성자 : {} ", board.getTitle(), board.getUser());
+        return board;
+    }
+
+    /**
+     * 게시글 목록 조회(메인 페이지용)
+     * @return 게시글 목록(작성자 정보 포함)
+     */
+    public List<Board> findAll() {
+        log.info("게시글 목록 조회 시작");
+        List<Board> boardList = boardJpaRepository.findAllJoinUser();
+        log.info("게시글 목록 조회 완료");
+        return boardList;
+    }
+
+    // 게시글 수정
+
+    /**
+     * 게시글 수정(권한 체크)
+     * @param id 게시글 pk
+     * @param updateDto 수정할 정보
+     * @param sessionUser 요청자 정보
+     * @return 수정된 게시글
+     */
+    @Transactional
+    public Board updateById(Long id, BoardRequest.UpdateDto updateDto, User sessionUser) {
+        log.info("게시글 수정 시작");
+        // 1. 게시글 조회
+        Board board = findById(id);
+        // 2. 권한 체크
+        if (!board.isOwner(sessionUser.getId())) {
+            throw new Exception403("본인이 작성한 게시글만 수정할 수 있습니다");
+        }
+        // 3. 더티 체킹을 활용한 수정
+        board.update(updateDto);
+
+        log.info("게시글 수정 완료");
+        return board;
+    }
+
+    // 게시글 삭제
+    @Transactional
+    public void deleteById(Long id, User sessionUser) {
+        log.info("게시글 삭제 시작");
+        Board board = findById(id);
+        if (!board.isOwner(sessionUser.getId())) {
+            log.warn("게시글 삭제 권한 없음 - 게시글 ID : {}, 작성자: {}, 요청자 : {}",
+                    id, board.getUser().getUsername(), sessionUser.getUsername());
+            throw new Exception403("본인이 작성한 게시글만 삭제할 수 있습니다");
+        }
+
+        boardJpaRepository.deleteById(id);
+        log.info("게시글 삭제 시작");
+    }
+
+
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\user\User.java
+========================================
+
+package com.tenco.spring_blog.user;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.sql.Timestamp;
+
+@Getter
+@NoArgsConstructor // 필수 (JPA 엔티티 생성시)
+@AllArgsConstructor
+@Table(name = "user_tb")
+@Entity
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // 같은 사용자명을 두 번 가입할 수 없도록 유니크 제약
+    @Column(unique = true)
+    private String username;
+    @Setter
+    private String password;
+    @Column(unique = true)
+    private String email;
+
+    @CreationTimestamp // now()
+    private Timestamp createdAt;
+
+    // id 와 createdAt은 자동으로 채워지므로 빌더에서 제외
+    @Builder
+    public User(String username, String password, String email) {
+        this.username = username;
+
+        this.password = password;
+        this.email = email;
+    }
+
+    // 회원 정보 수정 (변경 감지용)
+    public void update(String password) {
+        this.password = password;
+    }
+
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\user\UserController.java
+========================================
+
+package com.tenco.spring_blog.user;
+
+import com.tenco.spring_blog._core.util.Define;
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+
+@RequiredArgsConstructor // DI
+@Slf4j
+@Controller // IoC (제어의 역전) 싱글톤 패턴으로 관리 됨.
+public class UserController {
+
+    private final UserService userService;
+
+    // GET http://localhost:8080/join
+    @GetMapping("/join")
+    public String joinForm() {
+        return "user/join-form";
+    }
+
+    // POST http://localhost:8080/join
+    @PostMapping("/join")
+    public String join(UserRequest.JoinDto joinDto, Model model) {
+        joinDto.validate();
+        userService.join(joinDto);
+        return "redirect:/login";
+    }
+
+    // GET http://localhost:8080/login
+    @GetMapping("/login")
+    public String loginForm() {
+
+        return "user/login-form";
+    }
+
+    // POST http://localhost:8080/login
+    // 로그인 처리 (예외적으로 POTS 요청)
+    @PostMapping("/login")
+    public String login(UserRequest.LoginDto loginDto, HttpSession session) {
+        loginDto.validate();
+        User user = userService.login(loginDto);
+        user.setPassword(null);
+        session.setAttribute(Define.SESSION_USER, user);
+        return "redirect:/";
+    }
+
+
+    // GET http://localhost:8080/user/update
+    @GetMapping("/user/update")
+    public String updateForm(Model model, HttpSession session) {
+        User sessionUser = (User) session.getAttribute(Define.SESSION_USER);
+        User user = userService.findById(sessionUser.getId());
+        model.addAttribute("user", user);
+        return "user/update-form";
+    }
+
+    // GET http://localhost:8080/user/update
+    @PostMapping("/user/update")
+    public String update(UserRequest.UpdateDto updateDto, Model model, HttpSession session) {
+
+        updateDto.validate();
+        User sessionUser = (User) session.getAttribute(Define.SESSION_USER);
+        User updateUser = userService.updateById(sessionUser.getId(), updateDto);
+        updateUser.setPassword(null);
+        session.setAttribute(Define.SESSION_USER, updateUser);
+        return "redirect:/";
+    }
+
+    // GET http://localhost:8080/logout
+    @GetMapping("/logout")
+    public String logout(HttpSession session) {
+        session.invalidate();
+        return "redirect:/";
+    }
+
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\user\UserJpaRepository.java
+========================================
+
+package com.tenco.spring_blog.user;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository // 상속 - 불필요!
+public interface UserJpaRepository extends JpaRepository<User, Long> {
+    /**
+     * 1. 등록 및 수정 : save(User entity);
+     * - 엔티티를 DB에 저장합니다. ID가 없으면 INSERT, 있으면 UPDATE를 실행 함.
+     * <p>
+     * 2. 단건 조회 :  findById(Long id)
+     * - ID로 엔티티를 조회하면 Optional<Board> 타입을 반환합니다.
+     * <p>
+     * 3. 전체 조회 : findAll();
+     * - 테이블의 모든 데이터를 조회하며 List<User>로 반환 됨
+     * <p>
+     * 4. 삭제 : deleteById(Long id);
+     * - 특정 ID를 가진 엔티티를 삭제합니다.
+     * <p>
+     * 5. 데이터 개수: count();
+     * - 전체 레코드의 개수를 반환합니다.
+     * <p>
+     * 6. 존재 여부 확인 : existsById(Long id);
+     * - 해당 ID를 가진 데이터가 있는지 확인하여 boolean 을 반환합니다.
+     *
+     */
+
+    // 사용자명과 비밀번호로 조회 (로그인용)
+    @Query("SELECT u FROM User u WHERE u.username = :username AND u.password = :password")
+    Optional<User> findByUsernameAndPassword(@Param("username") String username, @Param("password") String password);
+
+    // 사용자명으로 사용자 조회 (중복 체크용)
+    @Query("SELECT u FROM User u WHERE u.username = :username AND u.password = :password")
+    Optional<User> findByUsername(@Param("username") String username);
+
+    // 사용자 정보 업데이트는 JPA 의 더티 체킹 활용
+
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\user\UserRequest.java
+========================================
+
+package com.tenco.spring_blog.user;
+
+import com.tenco.spring_blog._core.error.Exception400;
+import lombok.Data;
+
+public class UserRequest {
+
+    // 회원정보 수정용 DTO
+    @Data
+    public static class UpdateDto {
+        private String password;
+
+        public void validate() {
+            if(password == null || password.trim().isEmpty()) {
+                throw new Exception400("비밀번호는 필수입니다");
+            }
+            if (password.length() < 4) {
+                throw new Exception400("비밀번호는 4글자 이상이어야 합니다");
+            }
+            // 필요하다면 길이 수 제한, 특수문자 포함여부 (정규식) 활용 가능
+        }
+    }
+
+    // 회원가입용 DTO
+    @Data
+    public static class JoinDto {
+        private String username;
+        private String password;
+        private String email;
+
+        // 회원가입시 데이터 검증 메서드
+        public void validate() {
+            if(username == null || username.trim().isEmpty()) {
+                throw new Exception400("사용자명은 필수 입니다. ");
+            }
+            if(password == null || password.trim().isEmpty()) {
+                throw new Exception400("사용자명은 필수 입니다. ");
+            }
+            if(email == null || email.trim().isEmpty()) {
+                throw new Exception400("사용자명은 필수 입니다. ");
+            }
+            // 간단하게 이메일 형식 검증
+            if(!email.contains("@")) {
+                throw new Exception400("올바른 이메일 형식이 아닙니다");
+            }
+
+        }
+
+        // DTO 에서 User 엔티티로 변환하는 메서드
+        // 계층 간 데이터 변환을 명확하게 분리하는 것이 좋다.
+        // toEntity() <-- 메서드 이름 (이 메서드를 호출하면 User 객체를 반환하는 코드를 작성하시오)
+        public User toEntity() {
+            return User.builder()
+                    .username(username)
+                    .password(password)
+                    .email(email)
+                    .build();
+        }
+
+    } // end of join dto
+
+    @Data
+    public static class LoginDto {
+        private String username;
+        private String password;
+
+        // 회원가입시 데이터 검증 메서드
+        public void validate() {
+            if(username == null || username.trim().isEmpty()) {
+                throw new Exception400("사용자명은 필수 입니다. ");
+            }
+            if(password == null || password.trim().isEmpty()) {
+                throw new Exception400("사용자명은 필수 입니다. ");
+            }
+        }
+    }
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\user\UserService.java
+========================================
+
+package com.tenco.spring_blog.user;
+
+
+import com.tenco.spring_blog._core.error.Exception400;
+import com.tenco.spring_blog._core.error.Exception404;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * 서비스 레이어
+ * 핵심 개념:
+ * - 비즈니스 로직을 처리하는 계층
+ * - Controller 와 Repository 사이의 중간 계층 담당
+ * - 트랜잭션 관리
+ * 계층 구조 (3 Tier 아키텍처)
+ * C -> S -> R -> DB
+ */
+@Slf4j
+@RequiredArgsConstructor
+@Transactional(readOnly = true) // 기본적으로 읽기 전용 트랜잭션
+@Service
+public class UserService {
+
+    private final UserJpaRepository userJpaRepository;
+
+    /**
+     * 회원가입 처리
+     *
+     * @param joinDto 회원가입 정보
+     * @return 저장된 사용자 정보
+     */
+    @Transactional // 쓰기 작업이므로 트랜잭선 활성화
+    public User join(UserRequest.JoinDto joinDto) {
+        log.info("회원가입 서비스 처리 시작 - 사용자명: {}", joinDto.getUsername());
+        // 1. 중복 체크 : 이미 있으면 null 이 아님 (ifPresent 차이점 확인)
+        userJpaRepository.findByUsername(joinDto.getUsername())
+                .ifPresent(user -> {
+                    log.warn("회원가입 실패 - 중복된 사용자명 : {}", joinDto.getUsername());
+                    throw new Exception400("이미 존재하는 사용자명입니다");
+                });
+
+        // 2. 저장
+        User savedUser = userJpaRepository.save(joinDto.toEntity());
+        log.info("회원가입 서비스 처리 완료 - 사용자명: {}, ID: {} ", joinDto.getUsername(), savedUser.getId());
+        return savedUser;
+    }
+
+    /**
+     * 로그인 처리
+     *
+     * @param loginDto 로그인 정보
+     * @return 로그인된 사용자 정보
+     */
+    public User login(UserRequest.LoginDto loginDto) {
+        log.info("로그인 서비스 처리 시작 - 사용자명: {}", loginDto.getUsername());
+        User user = userJpaRepository.findByUsernameAndPassword(
+                        loginDto.getUsername(), loginDto.getPassword())
+                .orElseThrow(() -> {
+                    log.warn("로그인 실패 - 사용자명 : {}, 원인 : 인증정보 불일치", loginDto.getUsername());
+                    return new Exception400("사용자명 또는 비밀번호가 올바르지 않습니다");
+                });
+        log.info("로그인 성공 - 사용자명: {}", loginDto.getUsername());
+        return user;
+    }
+
+    /**
+     * 사용자 정보 조회
+     * @param id 사용자 PK
+     * @return 사용자 정보
+     */
+    public User findById(Long id) {
+        log.info("사용자 정보 조회 - ID : {}", id);
+        return userJpaRepository.findById(id)
+                .orElseThrow(() -> new Exception404("사용자를 찾을 수 없습니다"));
+    }
+
+
+    /**
+     * 회원 정보 수정 처리 (Dirty Checking 활용)
+     *
+     * @param id 사용자 PK
+     * @param updateDto 수정할 정보
+     * @return 수정된 사용자 정보
+     */
+    @Transactional
+    public User updateById(Long id, UserRequest.UpdateDto updateDto) {
+        User user = findById(id);
+        user.update(updateDto.getPassword());
+        return user;
+    }
+
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\_core\config\WebMvcConfig.java
+========================================
+
+package com.tenco.spring_blog._core.config;
+
+import com.tenco.spring_blog._core.interceptor.IpBlockInterceptor;
+import com.tenco.spring_blog._core.interceptor.LoginInterceptor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+// IoC
+@RequiredArgsConstructor
+@Configuration // 스프링 설정 크래스임을 표시 (빈으로도 등록 됨)
+public class WebMvcConfig implements WebMvcConfigurer {
+
+    private final LoginInterceptor loginInterceptor;
+    private final IpBlockInterceptor ipBlockInterceptor;
+
+    // 내가 정의한 인터셉터를 설정 클래스 등록할 수 있다.
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        // LoginInterceptor를 시스템에 등록
+
+        registry.addInterceptor(loginInterceptor)
+                // 인터셉터가 동작할 URL 패턴을 지정
+                .addPathPatterns("/user/**", "/board/**")
+                // 인터셉터에서 제외할 URL 패턴을 지정
+                .excludePathPatterns("/board/list", "/board/{id:\\d+}");
+        registry.addInterceptor(ipBlockInterceptor);
+        // \\d+ 는 정규표현식으로 1개 이상의 숫자를 의미한다.
+        // 예: /board/1, /board/123 (상세보기)은 로그인 없이도 접근 가능
+        //  /board/1/update 처럼 뒤에 경로가 더 붙으면 제외 대상이 아니게 된다.
+    }
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\_core\error\Exception400.java
+========================================
+
+package com.tenco.spring_blog._core.error;
+
+// 400 Bad Request 상황에서 사용할 사용자 정의 예외 클래스 (커스텀)
+// RuntimeException 를 상속하여 언체크 예외로 만듬
+public class Exception400 extends RuntimeException {
+    // 예외 메세지를 받을 수 있도록 String 파라미터 설계
+    public Exception400(String msg) {
+        super(msg); // 부모 클래스의 메세지 설정
+    }
+
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\_core\error\Exception401.java
+========================================
+
+package com.tenco.spring_blog._core.error;
+
+// 401 Unauthorized 상황에서 사용할 사용자 정의 예외 클래스 (커스텀)
+// RuntimeException 를 상속하여 언체크 예외로 만듬
+public class Exception401 extends RuntimeException {
+    // 예외 메세지를 받을 수 있도록 String 파라미터 설계
+    public Exception401(String msg) {
+        super(msg); // 부모 클래스의 메세지 설정
+    }
+
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\_core\error\Exception403.java
+========================================
+
+package com.tenco.spring_blog._core.error;
+
+// 403 Forbidden 상황에서 사용할 사용자 정의 예외 클래스 (커스텀)
+// RuntimeException 를 상속하여 언체크 예외로 만듬
+public class Exception403 extends RuntimeException {
+    // 예외 메세지를 받을 수 있도록 String 파라미터 설계
+    public Exception403(String msg) {
+        super(msg); // 부모 클래스의 메세지 설정
+    }
+
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\_core\error\Exception404.java
+========================================
+
+package com.tenco.spring_blog._core.error;
+
+// 404 Not Found 상황에서 사용할 사용자 정의 예외 클래스 (커스텀)
+// RuntimeException 를 상속하여 언체크 예외로 만듬
+public class Exception404 extends RuntimeException {
+    // 예외 메세지를 받을 수 있도록 String 파라미터 설계
+    public Exception404(String msg) {
+        super(msg); // 부모 클래스의 메세지 설정
+    }
+
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\_core\error\Exception500.java
+========================================
+
+package com.tenco.spring_blog._core.error;
+
+// 500 Internal Server Error 상황에서 사용할 사용자 정의 예외 클래스 (커스텀)
+// RuntimeException 를 상속하여 언체크 예외로 만듬
+public class Exception500 extends RuntimeException {
+    // 예외 메세지를 받을 수 있도록 String 파라미터 설계
+    public Exception500(String msg) {
+        super(msg); // 부모 클래스의 메세지 설정
+    }
+
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\_core\error\GlobalExceptionHandler.java
+========================================
+
+package com.tenco.spring_blog._core.error;
+
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+// 모든 컨트롤러에서 발생하는 예외를 이 클래스에서 처리 (중앙 집중화)
+@Slf4j
+@ControllerAdvice // IoC
+public class GlobalExceptionHandler {
+
+    // 특정 예외 타입이 발생했을 때 실행될 메서드로 지정
+    @ExceptionHandler(Exception400.class)
+    public String ex400(Exception400 e, HttpServletRequest request, Model model) {
+        log.warn("==== 400 Bad Request 에러 발생 ====");
+        log.warn("요청 URL : {}", request.getRequestURL());
+        log.warn("에러 메세지 : {}", e.getMessage());
+        log.warn("예외 클래스 : {}", e.getClass().getSimpleName());
+
+        model.addAttribute("msg", e.getMessage());
+        return "err/400";
+    }
+
+    @ExceptionHandler(Exception401.class)
+    public String ex401(Exception401 e, HttpServletRequest request, RedirectAttributes rttr) {
+        log.warn("==== 401 Unauthorized 에러 발생 ====");
+        log.warn("요청 URL : {}", request.getRequestURL());
+        log.warn("인증 오류 : {}", e.getMessage());
+        log.warn("예외 클래스 : {}", e.getClass().getSimpleName());
+
+        rttr.addFlashAttribute("errorMessage", e.getMessage());
+        return "redirect:/login";
+    }
+
+
+//    @ExceptionHandler(Exception403.class)
+//    public String ex403(Exception403 e, HttpServletRequest request, Model model) {
+//        log.warn("==== 403 Forbidden 에러 발생 ====");
+//        log.warn("요청 URL : {}", request.getRequestURL());
+//        log.warn("권한 오류 : {}", e.getMessage());
+//        log.warn("예외 클래스 : {}", e.getClass().getSimpleName());
+//
+//        model.addAttribute("msg", e.getMessage());
+//        return "err/403";
+//    }
+
+    // alert 수정 해주세요
+    @ExceptionHandler(Exception403.class)
+    @ResponseBody
+    @ResponseStatus(HttpStatus.FORBIDDEN) // 상태코드 403지정 (없으면 200으로 나감)
+    public String ex403(Exception403 e, HttpServletRequest request, Model model) {
+        log.warn("==== 403 Forbidden 에러 발생 ====");
+        log.warn("요청 URL : {}", request.getRequestURL());
+        log.warn("권한 오류 : {}", e.getMessage());
+        log.warn("예외 클래스 : {}", e.getClass().getSimpleName());
+        String msg = e.getMessage().replace("'", "\\'"); // 따옴표 깨짐 방지
+        return """
+                <script>
+                    alert('%s');
+                    history.back();
+                </script>    
+                """.formatted(msg);
+    }
+
+
+    @ExceptionHandler(Exception404.class)
+    public String ex404(Exception404 e, HttpServletRequest request, Model model) {
+        log.warn("==== 404 Not Found 에러 발생 ====");
+        log.info("요청 URL : {}", request.getRequestURL());
+        log.info("권한 오류 : {}", e.getMessage());
+        log.info("예외 클래스 : {}", e.getClass().getSimpleName());
+
+        model.addAttribute("msg", e.getMessage());
+        return "err/404";
+    }
+
+    @ExceptionHandler(Exception500.class)
+    public String ex500(Exception500 e, HttpServletRequest request, Model model) {
+        log.error("==== 500 Internal Server Error 에러 발생 ====");
+        log.error("요청 URL : {}", request.getRequestURL());
+        log.error("서버 오류 : {}", e.getMessage());
+        log.error("스택 트레이스 :", e); // 전체 스택 트레이스 포함
+
+        model.addAttribute("msg", "네트워크 일시적인 장애");
+        return "err/500";
+    }
+
+    // 기타 모든 RuntimeException 처리 (최후의 보루)
+    @ExceptionHandler(RuntimeException.class)
+    public String ex500(RuntimeException e, HttpServletRequest request, Model model) {
+        log.error("==== 예상치 못한 런타임 에러 발생 ====");
+        log.error("요청 URL : {}", request.getRequestURL());
+        log.error("에러 타입 : {}", e.getClass().getSimpleName());
+        log.error("에러 메세지: {}", e.getMessage());
+        log.error("스택 트레이스 :", e); // 전체 스택 트레이스 포함
+
+        model.addAttribute("msg", "시스템 오류 발생. 관리자에게 문의해주세요");
+        return "err/500";
+    }
+
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\_core\interceptor\IpBlockInterceptor.java
+========================================
+
+package com.tenco.spring_blog._core.interceptor;
+
+import com.tenco.spring_blog._core.error.Exception403;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
+
+import java.util.List;
+
+// 특정 IP를 차단 하는 인터셉터를 구현해주세요 단, 여러개 가능 (조원들 IP 차단)
+@Slf4j
+@Component
+public class IpBlockInterceptor implements HandlerInterceptor {
+    // IP 목록
+    private static final List<String> BLOCK_IP = List.of("192.168.7.237", "192.168.5.16");
+
+    // 요청
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        String clientIp = getClientIp(request);
+        log.info("현재 접속 IP = {} ", clientIp);
+        log.info("차단 목록 포함 여부 = {}", BLOCK_IP.contains(clientIp));
+
+        if (BLOCK_IP.contains(clientIp)) {
+            throw new Exception403("접근이 차단된 IP 입니다");
+        }
+        return true;
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, @Nullable ModelAndView modelAndView) throws Exception {
+        HandlerInterceptor.super.postHandle(request, response, handler, modelAndView);
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, @Nullable Exception ex) throws Exception {
+        HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        return request.getRemoteAddr();
+    }
+}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\_core\interceptor\LoginInterceptor.java
+========================================
+
+package com.tenco.spring_blog._core.interceptor;
+
+import com.tenco.spring_blog._core.error.Exception401;
+import com.tenco.spring_blog._core.util.Define;
+import com.tenco.spring_blog.user.User;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import org.jspecify.annotations.Nullable;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
+
+@Component // IoC (싱글톤으로 관리)
+public class LoginInterceptor implements HandlerInterceptor {
+
+    // 컨트롤러단에 들어가기전에 동작
+    // (단, 설정 클래스에 등록되어 있고 지정한 URL 패턴에 해당할 때만 동작)
+    // return true ---> 컨트롤러 안으로 들여 보낸다, false --> 컨트롤러 안으로 못 들어간다.
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        // getSession(false) : 세션이 없으면 새로 만들기 않고 null 반환
+        // request.getSession() : 로그인하지 않은 사용자에게도 빈 세션이 생성된다.
+        HttpSession session = request.getSession(false);
+        User sessionUser = (session == null) ? null : (User) session.getAttribute(Define.SESSION_USER);
+        if (sessionUser == null) {
+            throw  new Exception401("로그인 먼저 해주세요");
+        }
+        return true;
+    }
+
+    // 컨트롤러 실행 후, 뷰가 렌더링되기 바로 직전에 호출 시킬 수 있다.
+    // 주의: ... 컨트롤러에서 예외가 발생하면 호출되지 않는다.
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, @Nullable ModelAndView modelAndView) throws Exception {
+        HandlerInterceptor.super.postHandle(request, response, handler, modelAndView);
+    }
+
+    // 요청 처리가 완료된 후, 즉 뷰가 완전히 렌더링된 후에 호출 시킬 수 있다.
+    // 예외가 발생해도 호출되며, 발생한 예외는 ex 매개변수로 전달 된다.
+    // 단, preHandle 이 true를 반환한 경우에만 호출 된다.
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, @Nullable Exception ex) throws Exception {
+        HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
+    }
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\_core\util\Define.java
+========================================
+
+package com.tenco.spring_blog._core.util;
+
+public class Define {
+
+    public static final String SESSION_USER = "sessionUser";
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\_core\util\MyDateUtil.java
+========================================
+
+package com.tenco.spring_blog._core.util;
+
+import org.apache.commons.lang3.time.DateFormatUtils;
+
+import java.sql.Timestamp;
+import java.util.Date;
+
+// 날짜/시간 관련된 유틸리티 클래스
+// static 메서드로 구성하여 객체 생성 없어 바로 사용 가능
+public class MyDateUtil {
+
+    // timestamp를 원하는 포멧의 문자열로 변환
+    public static String timestampFormat(Timestamp timestamp) {
+        Date currentDate = new Date(timestamp.getTime());
+
+        return DateFormatUtils.format(currentDate, "yyyy-MM-dd HH:mm");
+    }
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\java\com\tenco\spring_blog\SpringBlogApplication.java
+========================================
+
+package com.tenco.spring_blog;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class SpringBlogApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SpringBlogApplication.class, args);
+    }
+
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\db\data.sql
+========================================
+
+-- 1. 사용자 (외래키가 가리킬 대상이므로 먼저 넣습니다)
+-- 비밀번호는 지금은 연습용 평문입니다. 암호화는 나중에 적용합니다
+INSERT INTO user_tb (username, password, email, created_at) VALUES ('admin',   '1234', 'admin@tenco.com',   NOW());
+INSERT INTO user_tb (username, password, email, created_at) VALUES ('minsu',   '1234', 'minsu@tenco.com',   NOW());
+INSERT INTO user_tb (username, password, email, created_at) VALUES ('jihun',   '1234', 'jihun@tenco.com',   NOW());
+INSERT INTO user_tb (username, password, email, created_at) VALUES ('seoyeon', '1234', 'seoyeon@tenco.com', NOW());
+
+-- 2. 게시글 (user_id 는 위 사용자의 id)
+-- admin(1)
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('블로그 개설을 환영합니다', '새 블로그가 문을 열었습니다. 많은 참여 부탁드립니다.', 1, NOW());
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('이용 수칙 안내', '서로 존중하는 소통 문화를 함께 만들어 가요.', 1, NOW());
+-- minsu(2)
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('스프링 부트 학습 후기', 'JPA를 배우니 SQL을 직접 쓰는 일이 확 줄었습니다.', 2, NOW());
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('연관관계 정리 노트', '@ManyToOne 과 외래키의 관계를 정리해 봤습니다.', 2, NOW());
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('코딩 테스트 문제 추천', '알고리즘 공부에 좋은 문제들을 모아 봤습니다.', 2, NOW());
+-- jihun(3)
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('프론트엔드 프레임워크 비교', '리액트와 뷰의 장단점을 비교해 봤습니다.', 3, NOW());
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('신입 개발자 취업 팁', '포트폴리오에서 가장 중요했던 점을 공유합니다.', 3, NOW());
+-- seoyeon(4)
+INSERT INTO board_tb (title, content, user_id, created_at) VALUES ('첫 번째 게시글입니다', '블로그에 처음 글을 올려 봅니다. 자주 소통해요.', 4, NOW());
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\templates\board\detail.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+
+    {{! 수정, 삭제 버튼: 오른쪽 정렬 }}
+    <div class="d-flex justify-content-end">
+        <a href="/board/{{board.id}}/update" class="btn btn-warning me-1">수정</a>
+        <form action="/board/{{board.id}}/delete" method="post">
+            <button class="btn btn-danger">삭제</button>
+        </form>
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <b>작성자</b> : {{board.user.username}}
+    </div>
+
+    <div>
+        <h2><b>{{board.title}}</b></h2>
+        <hr>
+        <div class="m-4 p-2">
+            {{board.content}}
+        </div>
+    </div>
+
+    {{! 댓글: 아직 기능이 없어 화면만 만들어 둡니다 }}
+    <div class="card mt-3">
+        <div class="card-body">
+            <form action="/reply/save" method="post">
+                <textarea class="form-control" rows="2" name="comment" placeholder="댓글을 입력하세요"></textarea>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-outline-primary mt-1">댓글 등록</button>
+                </div>
+            </form>
+        </div>
+        <div class="card-footer"><b>댓글 목록</b></div>
+        <div class="list-group">
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex">
+                    <div class="px-1 me-1 bg-primary text-white rounded">박지훈</div>
+                    <div>댓글 내용입니다</div>
+                </div>
+                <form action="/reply/1/delete" method="post">
+                    <button class="btn"><i class="fa-solid fa-trash"></i></button>
+                </form>
+            </div>
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex">
+                    <div class="px-1 me-1 bg-primary text-white rounded">이서연</div>
+                    <div>댓글 내용입니다</div>
+                </div>
+                <form action="/reply/2/delete" method="post">
+                    <button class="btn"><i class="fa-solid fa-trash"></i></button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\templates\board\list.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    {{#boardList}}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4 class="card-title">{{title}}</h4>
+                <p> 작성자 : {{user.username}} | 작성일 : {{time}}</p>
+                <a href="/board/{{id}}" class="btn btn-primary">상세보기</a>
+            </div>
+        </div>
+    {{/boardList}}
+
+    <!--  페이지네이션 (추후 구현 예정)  -->
+    <ul class="pagination d-flex justify-content-center">
+        <li class="page-item desabled"><a class="page-link" href="#">Previous</a></li>
+        <li class="page-item"><a class="page-link" href="#">1</a></li>
+        <li class="page-item"><a class="page-link" href="#">2</a></li>
+        <li class="page-item"><a class="page-link" href="#">Next</a></li>
+    </ul>
+
+</div>
+
+
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\templates\board\save-form.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    <div class="card">
+        <div class="card-header"><b>글쓰기</b></div>
+        <div class="card-body">
+            {{! name 속성의 값이 서버에서 받을 때의 이름이 됩니다 }}
+            <form action="/board/save" method="post">
+
+                <div class="mb-3">
+                    <input type="text" class="form-control" placeholder="제목" name="title">
+                </div>
+                <div class="mb-3">
+                    <textarea class="form-control" rows="5" placeholder="내용" name="content"></textarea>
+                </div>
+                <button class="btn btn-primary form-control">글쓰기 완료</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\templates\board\update-form.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    <div class="card">
+        <div class="card-header"><b>글 수정</b></div>
+        <div class="card-body">
+            <form action="/board/{{board.id}}/update" method="post">
+
+                <div class="mb-3">
+                    <input type="text" class="form-control" name="title" value="{{board.title}}">
+                </div>
+                <div class="mb-3">
+                    <textarea class="form-control" rows="5" name="content">{{board.content}}</textarea>
+                </div>
+                <button class="btn btn-primary form-control">수정 완료</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\templates\err\400.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+
+    <h1>Bad Request 400</h1>
+    <hr>
+    <h3>{{msg}}</h3>
+    <div class="mt-3">
+        <a href="javascript:history.back()" class="btn btn-secondary">이전페이지</a>
+        <a href="/" class="btn btn-primary">메인페이지</a>
+    </div>
+</div>
+
+{{> layout/header}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\templates\err\401.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+
+    <h1>Unauthorized 401</h1>
+    <hr>
+    <h3>{{msg}}</h3>
+    <div class="mt-3">
+        <a href="/login" class="btn btn-secondary">로그인</a>
+        <a href="/" class="btn btn-primary">메인페이지</a>
+    </div>
+</div>
+
+{{> layout/header}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\templates\err\403.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+
+    <h1>Forbidden 403</h1>
+    <hr>
+    <h3>{{msg}}</h3>
+    <div class="mt-3">
+        <a href="javascript:history.back()" class="btn btn-secondary">이전페이지</a>
+        <a href="/" class="btn btn-primary">메인페이지</a>
+    </div>
+</div>
+
+{{> layout/header}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\templates\err\404.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+
+    <h1>Not Found 404</h1>
+    <hr>
+    <h3>{{msg}}</h3>
+    <div class="mt-3">
+        <a href="/" class="btn btn-primary">메인페이지</a>
+    </div>
+</div>
+
+{{> layout/header}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\templates\err\500.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+
+    <h1>Internal Server Error 500</h1>
+    <hr>
+    <h3>{{msg}}</h3>
+    <div class="mt-3">
+        <a href="/" class="btn btn-primary">메인페이지</a>
+    </div>
+</div>
+
+{{> layout/header}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\templates\layout\footer.mustache
+========================================
+
+{{#errorMessage}}
+    <div class="container p-3">
+        <div class="alert alert-danger m-3">{{errorMessage}}</div>
+    </div>
+{{/errorMessage}}
+
+<footer class="bg-light p-5 text-center mt-auto">
+    <h4>Created by Tencoding</h4>
+    <h5>Tel. 010-1234-1234</h5>
+    <button class="btn btn-outline-primary">고객센터</button>
+    <button class="btn btn-outline-primary">오시는 길</button>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\templates\layout\header.mustache
+========================================
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Blog</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Tencoding</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+            <ul class="navbar-nav">
+                {{#sessionUser}}
+                    <!-- 로그인 했을 때 보여져야 하는 메뉴 -->
+                    <li class="nav-item"><a class="nav-link" href="/board/save">글쓰기</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/user/update">회원정보</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/logout">로그아웃</a></li>
+                {{/sessionUser}}
+
+                {{^sessionUser}}
+                    <!-- 로그인 안 했을 때 보여져야 하는 메뉴 -->
+                    <li class="nav-item"><a class="nav-link" href="/join">회원가입</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/login">로그인</a></li>
+                {{/sessionUser}}
+
+
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\templates\user\join-form.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    <div class="card">
+        <div class="card-header"><b>회원가입</b></div>
+        <div class="card-body">
+            <!-- 원래 자원의 요청은 GET 요청이 일반적이다. 하지만 로그인 요청은 예외적으로
+                     사용자의 이름과 비밀번호를 작성해야 되기 때문에 보안상 이유로 반드시 POST
+                       요청을 해야 한다 -->
+
+            <form action="/join" method="post">
+                <div class="mb-3">
+                    <input type="text" class="form-control" placeholder="사용자명" name="username" >
+                </div>
+                <div class="mb-3">
+                    <input type="password" class="form-control" placeholder="비밀번호" name="password" >
+                </div>
+                <div class="mb-3">
+                    <input type="email" class="form-control" placeholder="이메일" name="email">
+                </div>
+                <button class="btn btn-primary form-control">회원가입</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\templates\user\login-form.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    <div class="card">
+        <div class="card-header"><b>로그인</b></div>
+        <div class="card-body">
+            <form action="/login" method="post">
+                <div class="mb-3">
+                    <input type="text" class="form-control" placeholder="사용자명" name="username" value="minsu">
+                </div>
+                <div class="mb-3">
+                    <input type="password" class="form-control" placeholder="비밀번호" name="password" value="1234">
+                </div>
+                <button class="btn btn-primary form-control">로그인</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\templates\user\update-form.mustache
+========================================
+
+{{> layout/header}}
+
+<div class="container p-5">
+    <div class="card">
+        <div class="card-header"><b>회원정보 수정</b></div>
+        <div class="card-body">
+            <form action="/user/update" method="post">
+                <div class="mb-3">
+                    <input type="text" class="form-control" value="{{user.username}}" readonly>
+                </div>
+                <div class="mb-3">
+                    <input type="password" class="form-control" placeholder="새 비밀번호" name="password">
+                </div>
+                <div class="mb-3">
+                    <input type="email" class="form-control" name="email" value="{{user.email}}" readonly>
+                </div>
+                <button class="btn btn-primary form-control">수정 완료</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{> layout/footer}}
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\application-dev.yaml
+========================================
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO                         # 스프링과 라이브러리는 INFO 이상만 출력
+    com.tenco.spring_blog: DEBUG       # 우리 코드는 DEBUG 이상까지
+
+spring:
+  # 데이터 베이스 연결 (H2 메모리 DB 사용)
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:blogdb
+    username: root
+    password: root
+
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      # 시작할 때 마다 테이블을 새로 만듭니다. 기존 데이터는 다 지워집니다 (개발용)
+      ddl-auto: create
+    # 실행되는 SQL을 콘솔에 출력합니다
+    show-sql: true
+    properties:
+      hibernate:
+        default_batch_fetch_size: 10
+        format_sql: true      # 출력되는 SQL을 콘솔창에 줄바꿈해 보기 좋게 표시
+      # 추후 data.sql 을 테이블 생성 후에 실행합니다
+    defer-datasource-initialization: true
+
+  # 서버 시작시 이 파일 실행
+  sql:
+    init:
+      data-locations:
+        - classpath:db/data.sql
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\application-local.yaml
+========================================
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO                       #스프링과 라이브러리는 INFO 이상만 출력
+    com.tenco.spring_blog: DEBUG     #우리 코드는 DEBUG 이상까지
+
+
+spring:
+  # 데이터 베이스 연결 (H2 메모리 DB 사용)
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  # H2  콘솔 화면 켜기 (http://localhost:8080/h2-console)
+  h2:
+    console:
+      enabled: true
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      # 시작할 때마다 테이블을 새로 만듭니다. 기존 데이터는 다 지워집니다(개발용)
+      ddl-auto: create
+    # 실행되는 SQL을 콘솔에 출력합니다
+    show-sql: true
+    properties:
+      hibernate:
+        default_batch_fetch_size: 10   # 팀 프로젝트 할 때 무조건 넣기
+        format_sql: true     # 출력되는 SQL을 콘솔창에 줄바꿈해 보기 좋게 표시
+    # 추후 data.sql 을 테이블 생성후에 실행합니다
+    defer-datasource-initialization: true
+
+  # 서버 시작시 이 파일 실행
+  sql:
+    init:
+      mode: always    # MYSQL 사용시 필수 (always, never)
+      data-locations:
+        - classpath:db/data.sql
+
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\application-prod.yaml
+========================================
+
+server:
+  port: 5000
+
+logging:
+  level:
+    root: INFO
+    com.tenco.spring_blog: INFO
+
+
+spring:
+  # 데이터 베이스 연결 (MySQL)
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      # 운영에서는 create 를 쓰지 않습니다. 없는 테이블과 컬럼만 추가합니다.
+      default_batch_fetch_size: 10
+      ddl-auto: update
+    # 실행되는 SQL을 콘솔에 출력합니다
+    show-sql: true
+    # 추후 data.sql 을 테이블 생성 후에 실행합니다
+    defer-datesource-initialization: true
+
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\main\resources\application.yaml
+========================================
+
+spring:
+  config:
+    import: optional:file:.env[.properties] #스프링 .env를 자동으로 읽지 않습니다. 읽을 수 있도록 설정 추가
+  mustache:
+    servlet:
+      expose-session-attributes: true  # 머스태치 파일에서 세션에 담을 값을 바로 사용 가능
+  profiles:
+    active: local
+
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\test\java\com\tenco\spring_blog\board\BoardPersistRepositoryTest.java
+========================================
+
+package com.tenco.spring_blog.board;
+
+import com.tenco.spring_blog.user.User;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.context.annotation.Import;
+
+@Import(BoardJpaRepository.class)
+@DataJpaTest
+public class BoardPersistRepositoryTest {
+
+    @Test
+    public void delete_게시글_삭제_테스트() {
+
+        // given
+        // 1. 게시글 저장을 위한 User 객체 생성
+        User user = new User(
+                1L,
+                "testuser",
+                "1234",
+                "a@naver.com",
+                null
+        );
+
+        // 2. 삭제할 게시글 객체 생성
+        Board board = Board.builder()
+                .title("삭제할 게시글")
+                .content("삭제할 내용")
+                .user(user)
+                .build();
+
+        // 3. 게시글 저장
+        Board savedBoard = boardPersistRepository.save(board);
+
+        // 4. 저장된 게시글의 기본키(ID) 가져오기
+        Long boardId = savedBoard.getId();
+
+
+        // when
+        // 5. 게시글 삭제
+        boardPersistRepository.deleteById(boardId);
+
+        // then
+        // 6. 삭제된 게시글을 다시 조회
+        Board deletedBoard = boardPersistRepository.findById(boardId);
+
+        // 7. 삭제된 게시글은 조회되지 않아야 함
+        Assertions.assertThat(deletedBoard).isNull();
+
+    }
+
+
+    @Autowired
+    private BoardPersistRepository boardPersistRepository;
+
+    @Test
+    public void save_연관관계_포함_게시글_저장_테스트() {
+        // given
+        // 1. User 객체 생성 (실제로는 세션에서 가져온다)
+        User user = new User(1L, "testuser", "1234", "a@naver.com", null);
+        Board board = Board.builder()
+                .title("테스트글")
+                .content("테스트 내용")
+                .user(user)
+                .build();
+
+
+        // when
+        Board savedBoard = boardPersistRepository.save(board);
+
+
+        // then
+        // 1. 자동 생성된 ID 값 확인
+        Assertions.assertThat(savedBoard.getId()).isNotNull();
+        Assertions.assertThat(savedBoard.getId()).isGreaterThan(0);
+
+        // 2. 입력한 데이터가 올바르게 저장되어있는지 확인
+        Assertions.assertThat(savedBoard.getTitle()).isEqualTo("테스트글");
+        Assertions.assertThat(savedBoard.getContent()).isEqualTo("테스트내용");
+
+        // 3. 연관관계가 올바르게 저장되어있는지 확인
+        Assertions.assertThat(savedBoard.getUser()).isNotNull();
+        Assertions.assertThat(savedBoard.getUser().getUsername()).isEqualTo("testuser");
+
+        // 4. 원본 객체와 반환점 객체가 동일한 참조인지 확인
+        Assertions.assertThat(board).isSameAs(savedBoard);
+    }
+
+
+
+}
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\test\java\com\tenco\spring_blog\user\UserPersistRepositoryTest.java
+========================================
+
+package com.tenco.spring_blog.user;
+
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.context.annotation.Import;
+
+@Import(UserPersistRepository.class)
+@DataJpaTest // JPA 테스트에 필요한 환경을 자동으로 구성합니다.
+public class UserPersistRepositoryTest {
+
+    @Autowired // DI
+    private UserPersistRepository userPersistRepository;
+
+    @Test
+    public void findByUsernameAndPassword_로그인_성공_테스트() {
+
+        // given : 회원가입된 사용자 정보
+        User user = User.builder()
+                .username("testUser")
+                .password("3456")
+                .email("test@email.com")
+                .build();
+
+        userPersistRepository.save(user);
+
+        // when : 사용자명과 비밀번호로 조회
+        User loginUser = userPersistRepository.findByUsernameAndPassword(
+                "testUser",
+                "3456"
+        );
+
+        // then : 조회된 사용자 검증
+        Assertions.assertThat(loginUser).isNotNull();
+        Assertions.assertThat(loginUser.getId()).isNotNull();
+        Assertions.assertThat(loginUser.getUsername()).isEqualTo("testUser");
+        Assertions.assertThat(loginUser.getPassword()).isEqualTo("3456");
+        Assertions.assertThat(loginUser.getEmail()).isEqualTo("test@email.com");
+
+        // 저장한 객체와 조회한 객체가 같은 엔티티인지 확인
+        Assertions.assertThat(loginUser).isSameAs(user);
+    }
+
+
+    @Test
+    public void findByUsernameAndPassword_비밀번호_불일치_테스트() {
+
+        // given : 회원가입된 사용자 정보
+        User user = User.builder()
+                .username("testUser")
+                .password("3456")
+                .email("test@email.com")
+                .build();
+
+        userPersistRepository.save(user);
+
+        // when : 잘못된 비밀번호로 로그인 시도
+        User loginUser = userPersistRepository.findByUsernameAndPassword(
+                "testUser",
+                "9999"
+        );
+
+        // then : 로그인 실패 -> null
+        Assertions.assertThat(loginUser).isNull();
+    }
+
+
+    @Test
+    public void findByUsernameAndPassword_존재하지않는_사용자_테스트() {
+
+        // given : DB에 존재하지 않는 사용자 정보
+        String username = "xxxxx";
+        String password = "3456";
+
+        // when : 존재하지 않는 사용자로 로그인 시도
+        User loginUser = userPersistRepository.findByUsernameAndPassword(
+                username,
+                password
+        );
+
+        // then : 로그인 실패 -> null
+        Assertions.assertThat(loginUser).isNull();
+    }
+
+
+    // 단위_테스트할 메서드를 설계
+    @Test
+    public void save_회원가입_테스트() {
+        // given : 회원 가입시 사용자 정보
+        User user = User.
+                builder()
+                .username("testUser")
+                .password("3456")
+                .email("test@email.com")
+                .build();
+
+        // 저장 전 상태 확인 : ID 는 저장던에 null 이어야 한다.
+        Assertions.assertThat(user.getId()).isNull();
+        System.out.println("저장 전 User : " + user);
+
+        // when : 회원 가입 실행 (영속화)
+        User savedUser = userPersistRepository.save(user);
+
+        // then : 저장된 결과를 검증
+        // 1. 자동 생성된 ID 값 확인
+        Assertions.assertThat(savedUser.getId()).isNotNull();
+        Assertions.assertThat(savedUser.getId()).isGreaterThan(0);
+
+        // 2. 입력한 데이터가 올바르게 저장되었는지 확인
+        Assertions.assertThat(savedUser.getCreatedAt()).isNotNull();
+        Assertions.assertThat(savedUser.getUsername()).isEqualTo("testUser");
+        Assertions.assertThat(savedUser.getPassword()).isEqualTo("3456");
+        Assertions.assertThat(savedUser.getEmail()).isEqualTo("test@email.com");
+
+        // 3. 원본 객체외 반환된 객체가 동일한 참조인지 확인
+        // 영속성 컨텍스트는 같은 엔티티에 대해 같은 인스턴를 보장한다.
+        Assertions.assertThat(user).isSameAs(savedUser); // true, false
+
+    }
+
+    @Test
+    public void findByUsername_존재하지않는_사용자_테스트() {
+
+        // given : 존재하지 않는 사용자명
+        String username = "xxxxx";
+        // when
+        User notFoundUser = userPersistRepository.findByUsername(username);
+        // then : null 반환 확인
+        Assertions.assertThat(notFoundUser).isNull();
+    }
+
+}
+
+
+
+
+
+
+========================================
+File: C:\khs\work_space\spring_class\spring_blog\src\test\java\com\tenco\spring_blog\SpringBlogApplicationTests.java
+========================================
+
+package com.tenco.spring_blog;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class SpringBlogApplicationTests {
+
+    @Test
+    void contextLoads() {
+    }
+
+}
+

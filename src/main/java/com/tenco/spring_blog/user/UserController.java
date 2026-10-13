@@ -33,40 +33,36 @@ public class UserController {
     // GET http://localhost:8080/login
     @GetMapping("/login")
     public String loginForm() {
-
         return "user/login-form";
     }
 
     // POST http://localhost:8080/login
     // 로그인 처리 (예외적으로 POTS 요청)
     @PostMapping("/login")
-    public String login(UserRequest.LoginDto loginDto, HttpSession session) {
+    public String login(UserRequest.LoginDto loginDto, HttpSession session, Model model) {
         loginDto.validate();
-        User user = userService.login(loginDto);
-        user.setPassword(null);
-        session.setAttribute(Define.SESSION_USER, user);
+        SessionUserDto sessionUserDto = userService.login(loginDto);
+        session.setAttribute(Define.SESSION_USER, sessionUserDto);
         return "redirect:/";
     }
-
 
     // GET http://localhost:8080/user/update
     @GetMapping("/user/update")
     public String updateForm(Model model, HttpSession session) {
-        User sessionUser = (User) session.getAttribute(Define.SESSION_USER);
-        User user = userService.findById(sessionUser.getId());
-        model.addAttribute("user", user);
+        SessionUserDto sessionUserDto = (SessionUserDto) session.getAttribute(Define.SESSION_USER);
+        UserResponse.updateFormDto userUpdateFormDto = userService.findUpdateForm(sessionUserDto.getId());
+        model.addAttribute("user", userUpdateFormDto);
         return "user/update-form";
     }
 
-    // GET http://localhost:8080/user/update
+    // POST http://localhost:8080/user/update
     @PostMapping("/user/update")
     public String update(UserRequest.UpdateDto updateDto, Model model, HttpSession session) {
-
         updateDto.validate();
-        User sessionUser = (User) session.getAttribute(Define.SESSION_USER);
-        User updateUser = userService.updateById(sessionUser.getId(), updateDto);
-        updateUser.setPassword(null);
-        session.setAttribute(Define.SESSION_USER, updateUser);
+        SessionUserDto sessionUserDto = (SessionUserDto) session.getAttribute(Define.SESSION_USER);
+        SessionUserDto updateSessionUserDto = userService.updateById(sessionUserDto.getId(), updateDto);
+        // 세션 동기화 처리
+        session.setAttribute(Define.SESSION_USER, updateSessionUserDto);
         return "redirect:/";
     }
 
@@ -76,5 +72,4 @@ public class UserController {
         session.invalidate();
         return "redirect:/";
     }
-
 }
