@@ -32,9 +32,14 @@ public class BoardController {
     // GET http://localhost:8080/board/3
     // excludePathPatterns로 제외되어 로그인 접근 가능
     @GetMapping("/board/{id}")
-    public String detail(@PathVariable(name = "id") Long id, Model model) {
+    public String detail(@PathVariable(name = "id") Long id, Model model, HttpSession session) {
         BoardResponse.DetailDto detailDto = boardService.findById(id);
+        SessionUserDto sessionUserDto = (SessionUserDto) session.getAttribute(Define.SESSION_USER);
+        // 로그인 했고, 작성자 본인일 때만 수정, 삭제 버튼 표시
+        boolean isOwner = sessionUserDto != null && detailDto.getUserId().equals(sessionUserDto.getId());
+
         model.addAttribute("board", detailDto);
+        model.addAttribute("isOwner", isOwner);
         return "board/detail";
     }
 
@@ -58,6 +63,7 @@ public class BoardController {
         SessionUserDto sessionUserDto  = (SessionUserDto) session.getAttribute(Define.SESSION_USER);
         BoardResponse.UpdateFormDto updateFormDto = boardService.findByIdAndUpdateForm(id, sessionUserDto.getId());
         model.addAttribute("board", updateFormDto);
+
         return "board/update-form";
     }
 
