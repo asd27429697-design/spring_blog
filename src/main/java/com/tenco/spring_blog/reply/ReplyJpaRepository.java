@@ -31,6 +31,7 @@ public interface ReplyJpaRepository extends JpaRepository<Reply, Long> {
      *
      */
 
+    // TODO 기본 기능으로만으로 만들 수 없으니 따로 커스텀 쿼리를 작성 한 것
     // 게시글의 댓글 목록 조회 (작성자와 함께 조회, 오래된 순)
     @Query("SELECT r FROM Reply r JOIN FETCH r.user WHERE r.board.id = :boardId ORDER BY r.id ASC")
     List<Reply> findAllByBoardIdJoinUser(@Param("boardId") Long boardId);
