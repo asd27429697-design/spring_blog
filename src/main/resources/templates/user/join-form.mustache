@@ -8,7 +8,9 @@
                      사용자의 이름과 비밀번호를 작성해야 되기 때문에 보안상 이유로 반드시 POST
                        요청을 해야 한다 -->
 
-            <form action="/join" method="post">
+            {{! 파일을 보내려면 enctype 를 반드시 multipart/form-data 이어야 함}}
+
+            <form action="/join" method="post" enctype="multipart/form-data">
                 <div class="mb-3">
                     <input type="text" class="form-control" placeholder="사용자명" name="username" >
                 </div>
@@ -17,6 +19,10 @@
                 </div>
                 <div class="mb-3">
                     <input type="email" class="form-control" placeholder="이메일" name="email">
+                </div>
+                <div class="mb-3">
+                    <input type="file" class="form-control" id="profileImage" name="profileImage" accept="image/**">
+                    <small>JPG, PNG, GIF, WEBP 파일만 올릴 수 있습니다(선택사항)</small>
                 </div>
                 <button class="btn btn-primary form-control">회원가입</button>
             </form>
