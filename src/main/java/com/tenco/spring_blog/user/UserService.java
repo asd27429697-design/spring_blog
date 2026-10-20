@@ -53,7 +53,11 @@ public class UserService {
         String profileImage = FileUtil.saveImage(joinDto.getProfileImage());
 
         // 4. 프로필 파일 이름과 회원 정보 저장
-        User savedUser = userJpaRepository.save(joinDto.toEntity(profileImage));
+        User user = joinDto.toEntity(profileImage);
+        // Role 기본값 할당
+        user.addRole(Role.USER);
+        User savedUser = userJpaRepository.save(user);
+
         log.info("회원가입 서비스 처리 완료 - 사용자명: {}, ID: {} ", joinDto.getUsername(), savedUser.getId());
         return new UserResponse.JoinDto(savedUser);
     }
@@ -79,7 +83,6 @@ public class UserService {
 
     /**
      * 회원 정보 수정 화면 : 화면에 필요한 값만 담는 DTO 반환
-     *
      * @param userId
      * @return
      */
@@ -91,7 +94,7 @@ public class UserService {
     /**
      * 회원 정보 수정 처리 (Dirty Checking 활용)
      *
-     * @param id        사용자 PK
+     * @param id 사용자 PK
      * @param updateDto 수정할 정보
      * @return 수정된 사용자 정보
      */
@@ -108,17 +111,15 @@ public class UserService {
         if (updateDto.hasProfileImage()) {
             String newImage = FileUtil.saveImage(updateDto.getProfileImage());
             String oldImage = user.getProfileImage();
-            user.updateProfile(newImage);
+            user.updateProfileImage(newImage); // DB에는 새 파일 이름 (변경 감지)
             FileUtil.deleteFile(oldImage);
         }
-
         // 4. 세션 동기화용 DTO 변환
         return new SessionUserDto(user);
     }
 
     /**
      * 사용자 정보 조회
-     *
      * @param id 사용자 PK
      * @return 사용자 정보
      */
@@ -139,7 +140,7 @@ public class UserService {
     public void deleteProfileImage(Long userId) {
         User user = findById(userId);
         String oldImage = user.getProfileImage();
-        user.updateProfile(null); // 1. DB에 파일 비우기 (변경 감지)
+        user.updateProfileImage(null); // 1. DB에  파일 일므 비우기 (변경 감지)
         FileUtil.deleteFile(oldImage); // 2. 폴더 실제 파일 삭제
     }
 }
