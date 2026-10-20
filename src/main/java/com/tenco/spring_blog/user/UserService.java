@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 /**
  * 서비스 레이어
  * 핵심 개념:
@@ -83,6 +85,7 @@ public class UserService {
 
     /**
      * 회원 정보 수정 화면 : 화면에 필요한 값만 담는 DTO 반환
+     *
      * @param userId
      * @return
      */
@@ -94,7 +97,7 @@ public class UserService {
     /**
      * 회원 정보 수정 처리 (Dirty Checking 활용)
      *
-     * @param id 사용자 PK
+     * @param id        사용자 PK
      * @param updateDto 수정할 정보
      * @return 수정된 사용자 정보
      */
@@ -120,6 +123,7 @@ public class UserService {
 
     /**
      * 사용자 정보 조회
+     *
      * @param id 사용자 PK
      * @return 사용자 정보
      */
@@ -142,5 +146,40 @@ public class UserService {
         String oldImage = user.getProfileImage();
         user.updateProfileImage(null); // 1. DB에  파일 일므 비우기 (변경 감지)
         FileUtil.deleteFile(oldImage); // 2. 폴더 실제 파일 삭제
+    }
+
+    // 카카오 로그인 : 처음이면 자동 회원가입, 이미 있으면 로그인
+    @Transactional
+    public SessionUserDto kakaoLogin(UserResponse.KakaoUserInfo kakaoUserInfo) {
+
+        // 1. 카카오 회원번호로 우리 서비스의 사용자명 만들기
+        String username = "kakao_" + kakaoUserInfo.getId();
+
+        // 2. 이미 가입했는지 확인, 없으면 자동 회원 가입
+        User user = userJpaRepository.findByUsername(username)
+                .orElseGet(() -> joinKakaoUser(username, kakaoUserInfo));
+
+        // 3. 같은 이름의 일반 회원이 있다면 카카오 사용자로 로그인 시키지 않음
+        if (user.getProvider() != OAuthProvider.KAKAO) {
+            throw new Exception400("이미 사용 중인 사용자명입니다");
+        }
+
+        // 트랜잭션 안에서 SessionUserDto 생셩
+        return new SessionUserDto(user);
+    }
+
+    private User joinKakaoUser(String username, UserResponse.KakaoUserInfo kakaoUserInfo) {
+        User newUser = User.builder()
+                .username(username)
+                // 카카오 사용자는 비밀번호로 로그인하지 않으므로 아무도 알 수 없는 값을 넣음
+                .password(UUID.randomUUID().toString())
+                .profileImage(kakaoUserInfo.getProperties().getProfileImage())
+                .provider(OAuthProvider.KAKAO)
+                .email(username + "@kakao.com")
+                .build();
+        newUser.addRole(Role.USER);
+        return userJpaRepository.save(newUser);
+
+
     }
 }
