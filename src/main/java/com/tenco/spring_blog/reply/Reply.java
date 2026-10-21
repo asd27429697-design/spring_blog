@@ -58,4 +58,5 @@ public class Reply {
         }
         return this.user.getId().equals(userId); // true (내 댓글) false (내 댓글 아님)
     }
+
 }
