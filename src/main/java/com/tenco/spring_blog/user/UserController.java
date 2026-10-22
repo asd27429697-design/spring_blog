@@ -1,5 +1,6 @@
 package com.tenco.spring_blog.user;
 
+import com.tenco.spring_blog._core.error.Exception400;
 import com.tenco.spring_blog._core.error.UnAuthorizedException;
 import com.tenco.spring_blog._core.util.Define;
 import jakarta.annotation.PostConstruct;
@@ -26,6 +27,7 @@ public class UserController {
 
     private final UserService userService;
     private final KakaoLoginService kakaoLoginService;
+
 
     @GetMapping("/kakao-login")
     public String kakaoLogin() {
@@ -66,9 +68,15 @@ public class UserController {
 
     // POST http://localhost:8080/join
     @PostMapping("/join")
-    public String join(UserRequest.JoinDto joinDto, Model model) {
+    public String join(UserRequest.JoinDto joinDto, Model model, HttpSession session) {
         joinDto.validate();
-        userService.join(joinDto);
+        // 이메일 인증 완료된 값 꺼내 오기 (세션에 저장된 상태)
+        String verifiedEmail = (String) session.getAttribute(Define.VERIFIED_EMAIL);
+        userService.join(joinDto, verifiedEmail);
+
+        // 가입 완료 후 임시 저장해둔 세션에 이메일 정보 제거
+        session.removeAttribute(Define.VERIFIED_EMAIL);
+
         return "redirect:/login";
     }
 
