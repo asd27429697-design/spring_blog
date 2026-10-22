@@ -195,4 +195,12 @@ public class UserService {
 
 
     }
+
+    // 이메일 사용 가능 여부 (인증번호 발송 전)
+    public void checkEmailAvailable(String email) {
+        userJpaRepository.findByEmail(email)
+                .ifPresent(user -> {
+                    throw new Exception400("이미 등록된 이메일입니다");
+                });
+    }
 }
