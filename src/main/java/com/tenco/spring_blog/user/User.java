@@ -119,7 +119,7 @@ public class User {
 
     public void deductPoint(int amount) {
         if (amount <= 0) {
-            throw new Exception400("차감할 표인트는 0보다 커야 합니다");
+            throw new Exception400("차감할 포인트는 0보다 커야 합니다");
         }
         if (this.point < amount) {
             throw new NotEnoughtPointException("마이 페이지에서 충전 후 다시 시도해주세요");
