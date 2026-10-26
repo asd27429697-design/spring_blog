@@ -2,16 +2,19 @@ package com.tenco.spring_blog.board;
 
 import com.tenco.spring_blog._core.error.Exception403;
 import com.tenco.spring_blog._core.util.Define;
+import com.tenco.spring_blog.purchase.PurchaseService;
 import com.tenco.spring_blog.reply.ReplyResponse;
 import com.tenco.spring_blog.reply.ReplyService;
 import com.tenco.spring_blog.user.SessionUserDto;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -25,6 +28,16 @@ public class BoardController {
 
     private final BoardService boardService;
     private final ReplyService replyService;
+    private final PurchaseService purchaseService;
+
+    // 유료 게시글 구매 요청 URL 만들기
+    @PostMapping("/board/{id}/purchase")
+    public String purchase(@PathVariable(name = "id") Long id, HttpSession session) {
+        SessionUserDto sessionUserDto = (SessionUserDto) session.getAttribute(Define.SESSION_USER);
+        purchaseService.purchase(id, sessionUserDto.getId());
+        // 구매 후 상세보기로 이동 (이제 본문이 나와야 함)
+        return "redirect:/board/" + id;
+    }
 
     @GetMapping({"/", "/board/list"})
     public String list(@RequestParam(name = "page", defaultValue = "1") int page,
@@ -44,15 +57,15 @@ public class BoardController {
     }
 
     // GET http://localhost:8080/board/3
-    // excludePathPatterns로 제외되어 로그인 접근 가능
+// excludePathPatterns로 제외되어 로그인 접근 가능
     @GetMapping("/board/{id}")
     public String detail(@PathVariable(name = "id") Long id, Model model, HttpSession session) {
-        BoardResponse.DetailDto detailDto = boardService.findById(id);
         SessionUserDto sessionUserDto = (SessionUserDto) session.getAttribute(Define.SESSION_USER);
-        // 로그인 하지 않았으면 null 설정
+        // 로그인하지 않았으면 null 설정
         Long sessionUserId = (sessionUserDto == null) ? null : sessionUserDto.getId();
+        BoardResponse.DetailDto detailDto = boardService.findById(id, sessionUserId);
 
-        // 로그인 했고, 작성자 본인일 때만 수정, 삭제 버튼 표시
+        // 로그인했고, 작성자 본인일 때만 수정, 삭제 버튼 표시
         boolean isOwner = sessionUserDto != null && detailDto.getUserId().equals(sessionUserDto.getId());
 
         // 댓글 목록 조회
