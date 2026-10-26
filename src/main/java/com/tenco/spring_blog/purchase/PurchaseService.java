@@ -26,7 +26,7 @@ public class PurchaseService {
     @Transactional
     public void purchase(Long boardId, Long userId) {
         // 1. 게시글 조회
-        Board board = boardJpaRepository.findById(boardId)
+        Board board = boardJpaRepository.findByIdAndDeletedFalse(boardId)
                 .orElseThrow(() -> new Exception404("게시글을 찾을 없습니다"));
 
         // 2. 유료 게시글인지 확인

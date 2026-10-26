@@ -82,6 +82,6 @@ public class UserApiController {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleEx500(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("massage", "메일 발송 중 오류가 발생했습니다"));
+                .body(Map.of("message", "메일 발송 중 오류가 발생했습니다"));
     }
 }

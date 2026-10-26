@@ -36,7 +36,7 @@ public class ReplyService {
     public void save(ReplyRequest.SaveDto saveDto, SessionUserDto sessionUserDto) {
 
         // 1. 게시글 먼저 조회 (실제로 있는지 존재 확인)
-        Board board = boardJpaRepository.findById(saveDto.getBoardId())
+        Board board = boardJpaRepository.findByIdAndDeletedFalse(saveDto.getBoardId())
                 .orElseThrow(() -> new Exception404("게시글을 찾을 수 없습니다"));
 
         // 2. 작성자 정보 조회

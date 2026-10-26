@@ -35,7 +35,7 @@ public interface BoardJpaRepository extends JpaRepository<Board, Long> {
 
     // 게시글 ID로 조회하면서 작성자 정보도 한번게 가져 오기
     //  JOIN FETCH를 사용하여 N + 1 문제 해결
-    @Query(value = "SELECT b FROM Board b JOIN FETCH b.user u WHERE b.id = :id")
+    @Query(value = "SELECT b FROM Board b JOIN FETCH b.user u WHERE b.id = :id AND b.deleted = false")
     Optional<Board> findByIdJoinUser(@Param("id") Long id);
     // N + 1 문제 : 지연 로딩(Lazy Loading) 에서 Board 조회 후 User 를 따로 조회하면 쿼리가 여러번 실행 됨.
     // JOIN FETCH는 이를 한번의 쿼리를 해결 함.
@@ -43,8 +43,8 @@ public interface BoardJpaRepository extends JpaRepository<Board, Long> {
 
     // 게시글 페이징 조회(작성자 함계 조인해서 조회)
     // 정렬은 Pageable 에 담아서 전달하므로 쿼리에 ORDER BY를 쓰지 않음 !!
-    @Query(value = "SELECT b FROM Board b JOIN FETCH b.user u",
-            countQuery = "SELECT COUNT(b) FROM Board b")
+    @Query(value = "SELECT b FROM Board b JOIN FETCH b.user u WHERE b.deleted = false",
+            countQuery = "SELECT COUNT(b) FROM Board b WHERE b.deleted = false")
     Page<Board> findAllJoinUser(Pageable pageable);
 
 
@@ -52,13 +52,17 @@ public interface BoardJpaRepository extends JpaRepository<Board, Long> {
     // 정렬은 Pageable 에 담아서 전달하므로 쿼리에 ORDER BY를 쓰지 않음 !!
     @Query(value = """
                     SELECT b FROM Board b JOIN FETCH b.user
-                    WHERE b.title LIKE CONCAT('%', :keyword, '%')
-                    OR    b.content LIKE CONCAT('%', :keyword, '%') """,
+                    WHERE b.deleted = false
+                    AND (b.title LIKE CONCAT('%', :keyword, '%')
+                    OR    b.content LIKE CONCAT('%', :keyword, '%')) """,
             countQuery = """
                     SELECT COUNT(b) FROM Board b
-                    WHERE b.title LIKE CONCAT('%', :keyword, '%')
-                    OR    b.content LIKE CONCAT('%', :keyword, '%')
+                    WHERE b.deleted = false
+                    AND (b.title LIKE CONCAT('%', :keyword, '%')
+                    OR    b.content LIKE CONCAT('%', :keyword, '%'))
                     """)
     Page<Board> findAllKeywordJoinUser(Pageable pageable, @Param("keyword") String keyword);
+
+    Optional<Board> findByIdAndDeletedFalse(Long id);
 
 }

@@ -33,6 +33,9 @@ public class Board {
     @Column(nullable = false)
     @ColumnDefault("false")
     private boolean premium;
+    @Column(nullable = false)
+    @ColumnDefault("false")
+    private boolean deleted;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id") // board_tb 에 만들어질 외래키 컬럼 이름 설정
     private User user;
@@ -54,6 +57,11 @@ public class Board {
         this.title = updateDto.getTitle();
         this.content = updateDto.getContent();
         this.premium = updateDto.isPremium();
+    }
+
+    // 실제 레코드는 보존하고 삭제 상태만 변경한다.
+    public void delete() {
+        this.deleted = true;
     }
 
     // 게시글 수정/삭제 권한 체크용 편의 메서드

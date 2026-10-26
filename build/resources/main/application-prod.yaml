@@ -27,5 +27,5 @@ spring:
     # 실행되는 SQL을 콘솔에 출력합니다
     show-sql: true
     # 추후 data.sql 을 테이블 생성 후에 실행합니다
-    defer-datesource-initialization: true
+    defer-datasource-initialization: true
 

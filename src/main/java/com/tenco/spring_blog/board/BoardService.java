@@ -4,7 +4,6 @@ import com.tenco.spring_blog._core.error.Exception400;
 import com.tenco.spring_blog._core.error.Exception403;
 import com.tenco.spring_blog._core.error.Exception404;
 import com.tenco.spring_blog.purchase.PurchaseJpaRepository;
-import com.tenco.spring_blog.reply.ReplyJpaRepository;
 import com.tenco.spring_blog.user.SessionUserDto;
 import com.tenco.spring_blog.user.User;
 import com.tenco.spring_blog.user.UserJpaRepository;
@@ -34,7 +33,6 @@ public class BoardService {
 
     private final BoardJpaRepository boardJpaRepository;
     private final UserJpaRepository userJpaRepository;
-    private final ReplyJpaRepository replyJpaRepository;
     private final PurchaseJpaRepository purchaseJpaRepository;
 
     /**
@@ -151,11 +149,15 @@ public class BoardService {
                     id, board.getUser().getUsername(), sessionUser.getUsername());
             throw new Exception403("본인이 작성한 게시글만 삭제할 수 있습니다");
         }
-        // boardId로 댓글 부터 먼저 삭제
-        replyJpaRepository.deleteByBoardId(id);
-        // 해당 게시글 삭제
-        boardJpaRepository.deleteById(id);
-        log.info("게시글 삭제 종료");
+
+        // 구매자가 있는 게시글은 삭제 불가 (구매자의 구매 내역과 포인트 보호)
+        if (purchaseJpaRepository.countByBoardId(id) > 0) {
+            log.warn("구매 내역이 있어 게시글 삭제 불가 - 게시글 ID : {} ", id);
+            throw new Exception400("구매한 사용자가 있는 게시글을 삭제할 수 없습니다");
+        }
+
+        board.delete();
+        log.info("게시글 소프트 삭제 완료 - ID : {}", id);
     }
 
 }

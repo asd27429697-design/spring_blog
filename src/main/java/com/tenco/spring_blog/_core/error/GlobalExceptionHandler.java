@@ -146,8 +146,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NotEnoughtPointException.class)
     @ResponseBody
-    public String ex403(NotEnoughtPointException e, HttpServletRequest request, Model model) {
-        log.warn("==== 403 Forbidden 에러 발생 ====");
+    public String exNotEnoughtPointException(NotEnoughtPointException e, HttpServletRequest request, Model model) {
+        log.warn("==== 포인트 부족 에러 발생 ====");
         log.warn("요청 URL : {}", request.getRequestURL());
         log.warn("권한 오류 : {}", e.getMessage());
         log.warn("예외 클래스 : {}", e.getClass().getSimpleName());
@@ -155,7 +155,7 @@ public class GlobalExceptionHandler {
         return """
                 <script>
                     alert('%s');
-                    history.back();
+                    location.href = '/user/detail';
                 </script>    
                 """.formatted(msg);
     }
