@@ -18,6 +18,15 @@ public class UserController {
     private final UserService userService;
     private final KakaoLoginService kakaoLoginService;
 
+    // GET http://localhost:8080/user/point/charge (포인트 충전 화면)
+    @GetMapping("/user/point/charge")
+    public String chargePointFrom(Model model, HttpSession session) {
+        SessionUserDto sessionUserDto = (SessionUserDto) session.getAttribute(Define.SESSION_USER);
+        model.addAttribute("user", sessionUserDto);
+        return "user/charge-point";
+    }
+
+
 
     @GetMapping("/kakao-login")
     public String kakaoLogin() {
