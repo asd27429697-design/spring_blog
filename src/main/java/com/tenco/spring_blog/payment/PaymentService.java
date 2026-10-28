@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -20,9 +21,18 @@ public class PaymentService {
     private final PaymentJpaRepository paymentJpaRepository;
     private final UserJpaRepository userJpaRepository;
 
+    public List<PaymentResponse.ListDto> findAllByUserId(Long userId) {
+        List<Payment> paymentList = paymentJpaRepository
+                .findAllByUserIdAndStatus(userId, PaymentStatus.PAID);
+        // 응답 DTO 설계 후 리턴
+        return paymentList.stream()
+                .map(PaymentResponse.ListDto::new)
+                .toList();
+    }
+
     /**
-     *  1단계 : 결제 건 생성
-     *  paymentId 를 발급하고 "누가 얼마를 " 결제할 예정인지 READY 상태로 저장한다.
+     * 1단계 : 결제 건 생성
+     * paymentId 를 발급하고 "누가 얼마를 " 결제할 예정인지 READY 상태로 저장한다.
      */
     @Transactional
     public String prepare(Long sessionUserId, Integer amount) {
@@ -45,7 +55,7 @@ public class PaymentService {
     }
 
     private static String generatePaymentId(Long userId) {
-        String paymentId = "point_" + userId +  "_"
+        String paymentId = "point_" + userId + "_"
                 + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8);
         return paymentId;
     }
