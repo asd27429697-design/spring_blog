@@ -20,7 +20,7 @@
                                     <p class="text-muted mb-2"><i class="fa-solid fa-hashtag"></i> PG 거래번호 : {{pgTxId}}
                                     </p>
                                 {{/pgTxId}}
-                                <p class="text-muted mb-2"><i class="fa-solid fa-calendar"></i> 결제일 : {{paidAt}}
+                                <p class="text-muted mb-2"><i class="fa-solid fa-calendar"></i> 결제일 : {{createdAt}}
                                 </p>
                                 <p class="text-muted mb-0">
                                     <i class="fa-solid fa-circle-info"></i> 상태 :
@@ -35,13 +35,12 @@
                 </div>
             {{/paymentList}}
 
-
             {{^paymentList}}
                 <div class="text-center py-5">
                     <i class="fa-solid fa-credit-card fa-3x"></i>
                     <h5 class="text-muted">결제 내역이 없습니다</h5>
-                    <p class="text-muted">포인트를 충전해주세요</p>
-                    <a href="/user/point/charge" class="btn btn-primary">포인트 충전하가</a>
+                    <p class="text-muted">포인트를 충전해보세요</p>
+                    <a href="/user/point/charge" class="btn btn-primary">포인트 충전하기</a>
                 </div>
             {{/paymentList}}
 
