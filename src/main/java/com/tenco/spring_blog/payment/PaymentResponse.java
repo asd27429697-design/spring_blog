@@ -7,25 +7,44 @@ import lombok.Builder;
 import lombok.Data;
 
 public class PaymentResponse {
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    // 포트원 결제 취소 응답
+    public static class PortOneCancel {
+        Cancellation cancellation;
 
-    // 결제 내역(포인트 결제) DTO
+        @Data
+        public static class Cancellation {
+            private String id;
+            private String status;
+            private int totalAmount;
+        }
+
+    }
+
     @Data
     public static class ListDto {
-        private Long id; // 결제 내역 PK
+        private Long id;   // 결제 내역 PK
         private String paymentId;
         private String pgTxId;
         private int amount;
         private String statusDisplay; // 상태 표시 이름 (결제 완료 ..)
-        private String createdAt;
+        private String paidAt;        // 결제 시간
+        private boolean cancelled;  // 추가 : 환불 완료 결제인지 확인 (배지 색 구분용)
+        private boolean refundable;  // 추가 : 환불 요청 버튼 표시 여부
 
+        // (환불 테이블 만들어야 함)
+        // 환불 가능 여부는 환불 요청 기록이 있어야 알 수 있으므로 서브에스에서 계산해서 넘겨 준다
         @Builder
-        public ListDto(Payment payment) {
+        public ListDto(Payment payment, boolean refundable) {
             this.id = payment.getId();
             this.paymentId = payment.getPaymentId();
             this.pgTxId = payment.getPgTxId();
             this.amount = payment.getAmount();
             this.statusDisplay = payment.getStatus().getDisplayName(); // 결제완료, 결제 대기, 결제 취소
-            this.createdAt = MyDateUtil.timestampFormat(payment.getCreatedAt());
+            this.paidAt = MyDateUtil.timestampFormat(payment.getCreatedAt());
+            this.cancelled = payment.getStatus() == PaymentStatus.CANCELLED; // true, false
+            this.refundable = refundable;
         }
     }
 

@@ -14,21 +14,20 @@ public interface PaymentJpaRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByPaymentId(@Param("paymentId") String paymentId);
 
     @Query("""
-        SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END
-        FROM Payment p
-        WHERE p.paymentId = :paymentId
-""")
+                    SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END
+                    FROM Payment p
+                    WHERE p.paymentId = :paymentId
+            """)
     boolean existsByPaymentId(@Param("paymentId") String paymentId);
+
 
     // 결재 내역 조회 (로그인 사용자)
     @Query("""
                     SELECT p FROM Payment p
                     WHERE p.user.id = :userId
-                    AND p.status = :status
+                    AND p.status IN :statusList
                     ORDER BY p.id DESC
             """)
-
-    List<Payment> findAllByUserIdAndStatus(@Param("userId") Long userId,
-                                           @Param("status") PaymentStatus status);
-
+    List<Payment> findAllByUserIdAndStatusList(@Param("userId") Long userId,
+                                               @Param("statusList") List<PaymentStatus> statusList);
 }
